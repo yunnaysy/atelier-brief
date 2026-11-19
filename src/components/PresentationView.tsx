@@ -24,20 +24,21 @@ export function PresentationView({
         <button type="button" className="ghost" data-testid="exit-presentation" onClick={onExit}>
           Exit presentation
         </button>
-        <label className="priority-row">
+        <label className="priority-row presentation-confidential">
           <input type="checkbox" checked={showConfidential} onChange={onToggleConfidential} />
-          <span>Show confidential notes (opt in)</span>
+          <span>Include internal client notes in this presentation</span>
         </label>
         <button type="button" className="btn-primary" onClick={onPrint}>
           Print to PDF
         </button>
       </div>
+      <p className="presentation-confidential-hint no-print">These notes may contain sensitive information. Only include them if the recipient is authorized.</p>
 
       <section className="presentation-hero" data-testid="presentation-cover">
         <div className="presentation-hero-inner">
           <p className="hero-kicker">Atelier Brief</p>
           <h1>{project.intake.projectName || "Untitled brief"}</h1>
-          <p className="lede">A studio-grade website briefing deliverable.</p>
+          <p className="lede">Website strategy &amp; creative direction</p>
         </div>
       </section>
 

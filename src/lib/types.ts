@@ -198,18 +198,18 @@ export function newProject(intake: Intake = emptyIntake()): StudioProject {
 export function defaultArtDirection(): ArtDirection {
   return {
     narrative:
-      "A paper-and-ink studio system: warm alabaster, charcoal ink, antique bronze, and motion that feels like a page turning rather than a dashboard loading.",
+      "A paper-and-ink studio system: a quiet field, charcoal typography, and a single mineral accent reserved for actions.",
     displayFamily: "Instrument Serif",
     bodyFamily: "DM Sans",
     monoFamily: "IBM Plex Mono",
     density: "airy",
-    motion: "220ms fades and 1px rule draws; no bounce, no parallax.",
+    motion: "Transitions should feel quiet and brief, like a page turning rather than a dashboard loading.",
     palette: [
-      { name: "Paper", hex: "#F7F5F0", role: "Field" },
-      { name: "Ink", hex: "#25241F", role: "Text" },
-      { name: "Border", hex: "#E6E2D9", role: "Rule" },
-      { name: "Terracotta", hex: "#B76E55", role: "Accent" },
-      { name: "Olive", hex: "#747C62", role: "Privacy" },
+      { name: "Stone Paper", hex: "#F4F2EC", role: "Field" },
+      { name: "Charcoal Ink", hex: "#1C1917", role: "Text" },
+      { name: "Warm Limestone", hex: "#C5C1B6", role: "Rule" },
+      { name: "Deep Pine", hex: "#45584F", role: "Accent" },
+      { name: "Mist Slate", hex: "#8799A0", role: "Secondary" },
     ],
     hierarchy: [
       {

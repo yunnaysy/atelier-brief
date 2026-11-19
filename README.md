@@ -76,7 +76,7 @@ The official debug hook `self.FIREBASE_APPCHECK_DEBUG_TOKEN = true` is honored *
 
 ## Offline Studio Preview
 
-If no `VITE_FIREBASE_*` keys are present, the full interface still runs: The Aster Hotel judge demo, composition, sitemap studio, art-direction specimen, Privacy Receipt, presentation mode, export, and local persistence. The UI is clearly badged `STUDIO_PREVIEW`. Hybrid inference starts once a Spark web config is provided and the app is rebuilt.
+If no `VITE_FIREBASE_*` keys are present, the full interface still runs: The Aster Hotel judge demo, composition, sitemap studio, art-direction specimen, Privacy Receipt, presentation mode, export, and local persistence. The UI is clearly labelled Studio Preview, and no cloud request is implied. Hybrid inference starts once a Spark web config is provided and the app is rebuilt.
 
 ## $0 Spark setup
 
@@ -111,7 +111,7 @@ Official debug-token guidance: [Use App Check with the debug provider in web app
 4. **Design Decisions** — `DESIGN DECISION / 01` cards (recommendation, reasoning, business objective, implementation) from the same schema.
 5. **Present to Client** — one click or `?presentation=1` hides the sidebar, inspector, and confidential notes (opt-in to reveal), then prints a cover + brief + sitemap + art direction.
 
-One-click **Load Judge Demo: The Aster Hotel** loads a realistic fictional hospitality brief, including quotes (`Maison "JJ" Aster & Co.`), contacts, budget, and private notes, so judges can inspect redaction and restoration immediately.
+One-click **Load sample project** loads a realistic fictional hospitality brief, including quotes (`Maison "JJ" Aster & Co.`), contacts, budget, and private notes, so judges can inspect redaction and restoration immediately.
 
 ## Scripts and tests
 

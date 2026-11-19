@@ -25,7 +25,7 @@ export const CLIENT_PRESETS: ClientPreset[] = [
       coreGoal:
         "Book direct stays from design-led travelers who would otherwise default to an OTA, without turning the maison into a marketplace.",
       audience:
-        "Design-literate couples and independent travelers, typically 32–58, who already stay in considered houses and will judge a room by typography, materials, and morning light.",
+        "Independent travelers and couples who value distinctive accommodation, thoughtful design, and a more personal hospitality experience.",
       confidentialNotes:
         "Do not publish the reserved suite rate card or the owner's private annex at 14\\bis Rue des Teinturiers.\nPress: press@asterhotel.example. The signature suite is called L'Étoile — the family résumé stays off every public template.\nPrincipal: jane.jj.aster@asterhotel.example · +33 1 42 86 17 09",
     },

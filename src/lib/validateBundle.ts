@@ -175,16 +175,44 @@ export function validateBundle(value: unknown, mode: "full" | "section" = "full"
   };
 }
 
+export function humanBadgeLabel(badge: "on-device" | "cloud" | "error-fallback" | "preview" | "idle" | string): string {
+  switch (badge) {
+    case "on-device":
+      return "On-Device";
+    case "cloud":
+      return "Cloud Hybrid";
+    case "error-fallback":
+      return "Local Fallback";
+    default:
+      return "Studio Preview";
+  }
+}
+
 export function labelForBadge(badge: "on-device" | "cloud" | "error-fallback" | "preview"): string {
   switch (badge) {
     case "on-device":
       return "On-Device · Gemini Nano";
     case "cloud":
-      return "Cloud Fallback · Firebase AI Logic";
+      return "Cloud Hybrid · Firebase AI Logic";
     case "error-fallback":
       return "Local Fallback · AI Call Failed";
     default:
       return "Studio Preview · Deterministic Non-AI";
+  }
+}
+
+export function statusStripCopy(badge: "on-device" | "cloud" | "error-fallback" | "preview" | "idle", fieldCount: number): string {
+  const n = Math.max(0, fieldCount);
+  const fields = `${n} confidential field${n === 1 ? "" : "s"}`;
+  switch (badge) {
+    case "on-device":
+      return "On-device · Gemini Nano · Stays local";
+    case "cloud":
+      return `Cloud hybrid · ${n} field${n === 1 ? "" : "s"} redacted before send`;
+    case "error-fallback":
+      return "Local Fallback · AI call failed";
+    default:
+      return `Studio preview · No cloud call · ${fields} ready for redaction`;
   }
 }
 

@@ -54,10 +54,10 @@ export function ArtDirectionSpecimen({ art }: { art: ArtDirection }) {
         <p className="display" style={{ fontFamily: art.displayFamily }}>
           {art.hierarchy[0]?.sample || "Atelier"}
         </p>
-        <p className="lede">{art.narrative}</p>
-        <p className="reason">
-          Density: {art.density}. {art.motion}
+        <p className="alphabet" style={{ fontFamily: art.displayFamily }}>
+          Aa Bb Cc Dd Ee Ff Gg &nbsp; ABCDEFGHIJKLMNOPQRSTUVWXYZ &nbsp; 0123456789
         </p>
+        <p className="lede">{art.narrative}</p>
       </div>
 
       <div className="swatch-row" style={{ marginTop: "1.5rem" }}>
@@ -90,6 +90,32 @@ export function ArtDirectionSpecimen({ art }: { art: ArtDirection }) {
         </div>
       </div>
 
+
+      <div className="component-study" style={{ background: paper, color: ink }}>
+        <p className="label">Component study</p>
+        <p className="component-kicker">Button and card preview</p>
+        <h3 style={{ fontFamily: art.displayFamily }}>Discover the property.</h3>
+        <p>Explore rooms, amenities and the experience, using the proposed palette.</p>
+        <div className="component-actions">
+          <span
+            className="component-btn primary"
+            style={{
+              background: art.palette.find((c) => /accent/i.test(c.role))?.hex ?? ink,
+              color: paper,
+            }}
+          >
+            Explore rooms
+          </span>
+          <span className="component-btn secondary" style={{ color: ink, borderColor: ink }}>
+            View availability
+          </span>
+        </div>
+        <aside className="component-card" style={{ borderColor: art.palette.find((c) => /rule|secondary/i.test(c.role))?.hex ?? "#C5C1B6" }}>
+          <strong style={{ fontFamily: art.displayFamily }}>A considered stay</strong>
+          <span>Illustrative specimen for primary action, secondary action, and a hairline card.</span>
+        </aside>
+      </div>
+
       <div className="hierarchy" style={{ marginTop: "1.6rem" }}>
         <p className="label">Typographic hierarchy</p>
         {art.hierarchy.map((row) => (
@@ -115,6 +141,12 @@ export function ArtDirectionSpecimen({ art }: { art: ArtDirection }) {
             </div>
           </div>
         ))}
+      </div>
+      <div className="implementation-notes">
+        <p className="label">Implementation notes</p>
+        <p>
+          Layout density is {art.density}. {art.motion} Prefer a 180ms fade, 1px borders, and respect for reduced-motion settings.
+        </p>
       </div>
       {copied ? <div className="toast inline-toast" role="status">{copied}</div> : null}
     </div>

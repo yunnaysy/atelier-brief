@@ -61,8 +61,8 @@ export function IntakeRail({
           onClick={onJudgeDemo}
           disabled={busy}
         >
-          <span className="kicker label">One-click guided demo</span>
-          <strong>Load Judge Demo: The Aster Hotel</strong>
+          <span className="kicker label">Sample project</span>
+          <strong>Load sample project</strong>
           <span>A realistic fictional client, including quotes, contacts, budget, and confidential notes.</span>
         </button>
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArtDirectionSpecimen } from "./components/ArtDirectionSpecimen";
 import { BottomNav, StageNav } from "./components/BottomNav";
 import { BriefCanvas } from "./components/BriefCanvas";
@@ -10,8 +10,6 @@ import { ProjectHeader } from "./components/ProjectHeader";
 import { SitemapStudio } from "./components/SitemapStudio";
 import { StudioSidebar } from "./components/StudioSidebar";
 import {
-  connectionLabel,
-  detectNanoAvailability,
   generateStudioWork,
   isFirebaseConfigured,
 } from "./lib/hybridAi";
@@ -20,8 +18,9 @@ import { loadActiveId, loadProjects, saveActiveId, saveProjects } from "./lib/pe
 import { CLIENT_PRESETS } from "./lib/presets";
 import { planPrivacyShield } from "./lib/privacyShield";
 import { receiptFromTelemetry } from "./lib/privacyReceipt";
-import type { InferenceBadge, Intake, NanoAvailability, StudioProject, ToneId, WorkspaceTab } from "./lib/types";
+import type { InferenceBadge, Intake, StudioProject, ToneId, WorkspaceTab } from "./lib/types";
 import { newProject } from "./lib/types";
+import { statusStripCopy } from "./lib/validateBundle";
 
 function presetIdFor(intake: Intake): string | null {
   const found = CLIENT_PRESETS.find(
@@ -30,18 +29,6 @@ function presetIdFor(intake: Intake): string | null {
   return found?.id ?? null;
 }
 
-function filledFieldCount(intake: Intake): number {
-  return [
-    intake.projectName,
-    intake.clientName,
-    intake.industry,
-    intake.budget,
-    intake.timeline,
-    intake.coreGoal,
-    intake.audience,
-    intake.confidentialNotes,
-  ].filter((value) => value.trim()).length;
-}
 
 function presentationFlag(): boolean {
   if (typeof window === "undefined") return false;
@@ -64,7 +51,6 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [busySection, setBusySection] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [nano, setNano] = useState<NanoAvailability>("unknown");
   const [hydrated, setHydrated] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [privacyOpen, setPrivacyOpen] = useState(false);
@@ -86,7 +72,6 @@ export default function App() {
         setActiveId(savedId && saved.some((item) => item.id === savedId) ? savedId : saved[0].id);
       }
       setHydrated(true);
-      setNano(await detectNanoAvailability());
     })();
     return () => {
       cancelled = true;
@@ -105,9 +90,7 @@ export default function App() {
     return () => window.clearTimeout(id);
   }, [toast]);
 
-  const link = useMemo(() => connectionLabel({ configured, nano }), [configured, nano]);
   const badge: InferenceBadge | "idle" = project.lastTelemetry?.badge ?? "preview";
-  const fields = filledFieldCount(project.intake);
   const planCount = planPrivacyShield(project.intake).fields.length;
 
   const updateProject = (patch: Partial<StudioProject> | ((current: StudioProject) => StudioProject)) => {
@@ -248,86 +231,59 @@ export default function App() {
         }}
         onNew={createProject}
         onPrivacy={() => setPrivacyOpen(true)}
+        onJudgeDemo={() => void loadJudgeDemo()}
+        demoBusy={busy}
       />
 
       <div className="shell">
         <ProjectHeader
           title={project.intake.projectName || "Untitled brief"}
           category={project.intake.industry}
-          badge={badge}
-          label={project.lastTelemetry?.label ?? link.hint}
-          onPrivacy={() => setPrivacyOpen(true)}
+          busy={busy}
           onPresent={enterPresentation}
-          onExport={() => setTab("export")}
+          onCompose={() => void compose()}
         />
 
         <div className="project-strip" data-testid="project-strip">
           <div>
+            <p className="label">Project details</p>
+            <p className="strip-title">{project.intake.projectName || "Untitled brief"}</p>
             <p className="strip-line">
-              Project details · {fields} field{fields === 1 ? "" : "s"}
-              {project.intake.projectName ? ` · ${project.intake.projectName}` : ""}
-              {project.intake.industry ? ` · ${project.intake.industry}` : ""}
-              {project.intake.coreGoal ? ` · ${project.intake.coreGoal}` : ""}
+              {(project.intake.industry || "Independent practice").replace(/^Independent boutique hospitality$/i, "Hospitality")}
+              {" · Website strategy"}
+              {project.intake.timeline ? ` · ${project.intake.timeline.split(",")[0]}` : ""}
             </p>
+            {project.intake.coreGoal ? (
+              <p className="strip-goal">
+                Primary goal:{" "}
+                {presetIdFor(project.intake) === "aster-hotel"
+                  ? "Increase direct reservations."
+                  : project.intake.coreGoal}
+              </p>
+            ) : null}
             <button type="button" className="text-btn" data-testid="edit-details" onClick={() => setDetailsOpen(true)}>
               Edit project details
             </button>
           </div>
-          <div className="strip-actions">
-            <button type="button" className="btn-secondary" data-testid="judge-demo" onClick={() => void loadJudgeDemo()} disabled={busy}>
-              Load Judge Demo: The Aster Hotel
-            </button>
-            <button type="button" className="btn-primary" data-testid="compose" onClick={() => void compose()} disabled={busy}>
-              {busy ? "Composing…" : "Generate Brief"}
-            </button>
-          </div>
+          {presetIdFor(project.intake) !== "aster-hotel" ? (
+            <div className="strip-actions">
+              <button type="button" className="btn-secondary" data-testid="judge-demo" onClick={() => void loadJudgeDemo()} disabled={busy}>
+                Load sample project
+              </button>
+            </div>
+          ) : null}
         </div>
 
         <StageNav tab={tab} onTab={setTab} />
 
-        <div className="bento-row" data-testid="bento-row">
-          <article className="bento bento-dark">
-            <div className="bento-icon" aria-hidden="true">↗</div>
-            <p className="label">Hybrid AI Engine</p>
-            <strong className="bento-accent">
-              {badge === "on-device"
-                ? "ON_DEVICE"
-                : badge === "cloud"
-                  ? "IN_CLOUD"
-                  : badge === "error-fallback"
-                    ? "LOCAL_FALLBACK_ERROR"
-                    : "STUDIO_PREVIEW"}
-            </strong>
-            <span className="mono-pill">
-              {project.lastTelemetry
-                ? `${project.lastTelemetry.latencyMs} ms · ${project.lastTelemetry.model}`
-                : link.hint}
-            </span>
-          </article>
-          <article className="bento bento-glass">
-            <div className="bento-icon" aria-hidden="true">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <path d="M12 3.5 5.5 6.2v5.1c0 4.3 2.8 7.4 6.5 8.7 3.7-1.3 6.5-4.4 6.5-8.7V6.2L12 3.5Z" />
-              </svg>
-            </div>
-            <p className="label">
-              Privacy Shield
-              <span className="status-dot status-dot-ok" title="Protected" />
-            </p>
-            <strong>
-              {planCount} field{planCount === 1 ? "" : "s"} protected
-            </strong>
-            <span>Configured confidential fields and detected emails or phones are tokenized before any cloud call.</span>
-          </article>
-          <article className="bento bento-white">
-            <div className="bento-icon" aria-hidden="true">↘</div>
-            <p className="label">Workspace</p>
-            <strong>Saved locally</strong>
-            <div className="bento-pills">
-              <span className="mini-pill">IndexedDB</span>
-              <span className="mini-pill">Not E2E encrypted</span>
-            </div>
-          </article>
+        <div className="status-strip" data-testid="status-strip" data-kind={badge}>
+          <p>
+            <span className="status-dot" aria-hidden="true" />
+            <span>{statusStripCopy(badge, planCount)}</span>
+          </p>
+          <button type="button" className="text-btn" data-testid="privacy-pill" onClick={() => setPrivacyOpen(true)}>
+            View details
+          </button>
         </div>
 
         <main className="workspace-main">
@@ -336,7 +292,6 @@ export default function App() {
               intake={project.intake}
               sections={project.sections}
               rationale={project.rationale}
-              telemetry={project.lastTelemetry}
               busy={busy}
               busySection={busySection}
               onEdit={(id, body) =>

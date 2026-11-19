@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { downloadReceipt } from "../lib/privacyReceipt";
 import type { PrivacyReceipt, Telemetry } from "../lib/types";
+import { humanBadgeLabel } from "../lib/validateBundle";
 
 function nanoLabel(value: Telemetry["nano"] | undefined) {
   switch (value) {
@@ -33,14 +34,7 @@ export function PrivacyDrawer({
   const [pane, setPane] = useState<"receipt" | "inspector">("receipt");
   if (!open) return null;
 
-  const source =
-    (telemetry?.inferenceSource ?? receipt?.inferenceSource) === "on_device"
-      ? "ON_DEVICE"
-      : (telemetry?.inferenceSource ?? receipt?.inferenceSource) === "in_cloud"
-        ? "IN_CLOUD"
-        : (telemetry?.badge ?? receipt?.badge) === "error-fallback"
-          ? "LOCAL_FALLBACK_ERROR"
-          : "STUDIO_PREVIEW";
+  const source = humanBadgeLabel(telemetry?.badge ?? receipt?.badge ?? "preview");
 
   return (
     <div className="drawer-backdrop" data-testid="privacy-drawer" onClick={onClose}>

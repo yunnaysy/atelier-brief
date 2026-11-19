@@ -27,12 +27,12 @@ export function receiptFromTelemetry(telemetry: Telemetry, sessionId = makeSessi
 export function receiptToMarkdown(receipt: PrivacyReceipt, projectName: string): string {
   const source =
     receipt.inferenceSource === "on_device"
-      ? "ON_DEVICE"
+      ? "On-Device"
       : receipt.inferenceSource === "in_cloud"
-        ? "IN_CLOUD"
+        ? "Cloud Hybrid"
         : receipt.badge === "error-fallback"
-          ? "LOCAL_FALLBACK_ERROR"
-          : "STUDIO_PREVIEW";
+          ? "Local Fallback"
+          : "Studio Preview";
   return [
     "# Atelier Brief — Privacy Receipt",
     "",

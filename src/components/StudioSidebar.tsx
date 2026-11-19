@@ -1,4 +1,5 @@
 import type { InferenceBadge, StudioProject, WorkspaceTab } from "../lib/types";
+import { humanBadgeLabel } from "../lib/validateBundle";
 
 export function StudioSidebar({
   projects,
@@ -10,6 +11,8 @@ export function StudioSidebar({
   onOpen,
   onNew,
   onPrivacy,
+  onJudgeDemo,
+  demoBusy,
 }: {
   projects: StudioProject[];
   activeId: string;
@@ -20,6 +23,8 @@ export function StudioSidebar({
   onOpen: (id: string) => void;
   onNew: () => void;
   onPrivacy: () => void;
+  onJudgeDemo: () => void;
+  demoBusy: boolean;
 }) {
   const recent = projects.slice(0, 5);
   return (
@@ -39,6 +44,9 @@ export function StudioSidebar({
         </button>
         <button type="button" className="nav-link" data-testid="new-brief" onClick={onNew}>
           New Brief
+        </button>
+        <button type="button" className="nav-link" data-testid="judge-demo-nav" onClick={onJudgeDemo} disabled={demoBusy}>
+          Load sample project
         </button>
         <div className="nav-recent">
           <p className="label">Recent projects</p>
@@ -61,13 +69,7 @@ export function StudioSidebar({
           <span className="mono-index">AI</span>
           Privacy &amp; AI
           <span className="nav-badge" data-kind={badge}>
-            {badge === "on-device"
-              ? "ON_DEVICE"
-              : badge === "cloud"
-                ? "IN_CLOUD"
-                : badge === "error-fallback"
-                  ? "LOCAL_FALLBACK_ERROR"
-                  : "STUDIO_PREVIEW"}
+            {humanBadgeLabel(badge)}
           </span>
         </button>
       </div>

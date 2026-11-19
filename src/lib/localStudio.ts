@@ -336,17 +336,17 @@ function defaultRationale(intake: Intake, flavor: "architecture" | "coffee" | "f
         recommendation: "Use a compact typographic system with a single accent.",
         reasoning: "Visual noise reads as imprecision. A restrained palette signals the same discipline as the advice.",
         businessObjective: "Look like a room where serious work happens.",
-        implementation: "One deep ink, one paper ground, one terracotta cue for primary actions only.",
+        implementation: "One deep ink, one paper ground, and a single accent used only for primary actions.",
       },
     ];
   }
   if (flavor === "hotel") {
     return [
       {
-        recommendation: "Design for direct booking of design-led stays, not for an OTA facsimile.",
-        reasoning: `${n} is a maison, not a chain. The first screen should feel like arrival at the desk — light, linen, a reserved calm — rather than a calendar widget fighting for attention.`,
-        businessObjective: "Increase direct reservations from design-literate travelers who would otherwise default to a marketplace.",
-        implementation: "Home opens on a single photograph and one sentence of stance. Availability is a quiet second action, never a sticky bar that covers the typography.",
+        recommendation: "Design the site to support direct reservations, not to imitate a marketplace listing.",
+        reasoning: `${n} is an independent house, not a chain. The first screen should establish the character of the stay and make it easy to look at rooms, rather than opening on a calendar or booking widget.`,
+        businessObjective: "Increase direct reservations from travelers who would otherwise default to a marketplace.",
+        implementation: "Home leads with one clear photograph, a short statement of the house, and a secondary path to check availability. The reservation action should never cover the typography.",
       },
       {
         recommendation: "Give L'Étoile its own page, and keep unpublished house details off every public template.",
@@ -355,16 +355,16 @@ function defaultRationale(intake: Intake, flavor: "architecture" | "coffee" | "f
         implementation: "A dedicated Suite page with material notes and a request path. Rate cards, annex addresses, and private family résumés never interpolate into public copy.",
       },
       {
-        recommendation: "Set type like a house journal: a lyrical display, a readable text face, and mono only for reservations.",
-        reasoning: "Boutique hospitality is judged in the first two seconds of typography. A generic sans stack would make The Aster Hotel look like a template.",
-        businessObjective: "Signal editorial craft so the right guests self-select before they ask about price.",
-        implementation: "Instrument Serif for the house name and suite titles, DM Sans for body, IBM Plex Mono for confirmation numbers and dates.",
+        recommendation: "Set a clear typographic system: a distinctive serif for headlines, a neutral sans for interface and room information.",
+        reasoning: "Guests form an impression of the house in the first seconds of typography. A generic type stack would make the site feel interchangeable with a template.",
+        businessObjective: "Signal editorial care so the right guests self-select before they enquire about price.",
+        implementation: "Instrument Serif for the hotel name and suite titles, DM Sans for body and navigation, IBM Plex Mono only for confirmation numbers and dates.",
       },
       {
-        recommendation: "Photograph materials and morning light, not lifestyle casting.",
-        reasoning: "The audience has already seen polished influencer rooms. They will trust stone, linen, and a courtyard at 8 a.m. more than a posed couple.",
-        businessObjective: "Convert skepticism into a reservation inquiry by showing the actual house.",
-        implementation: "A restrained five-color palette drawn from plaster, ink, terracotta tile, garden green, and linen. Motion is limited to slow fades; nothing bounces.",
+        recommendation: "Photograph the actual rooms, materials, and daylight, not lifestyle casting.",
+        reasoning: "Guests comparing independent houses already see a great deal of staged hospitality photography. Credible pictures of the rooms and the property will do more to support a reservation than posed lifestyle scenes.",
+        businessObjective: "Convert interest into a reservation inquiry by showing the house as it is.",
+        implementation: "A quiet architectural palette of stone paper, charcoal ink, mist slate, deep pine, and warm limestone. Motion stays brief and unobtrusive.",
       },
     ];
   }
@@ -398,16 +398,18 @@ function hotelBundle(intake: Intake): { sections: BriefSection[]; sitemap: Sitem
         id: "executive-summary",
         title: "Executive Summary",
         body: paragraphs(
-          `${n} should feel like a small maison you can almost smell: lime plaster, courtyard shade, linen at the end of a long journey. The website is not a booking engine with a photograph attached. It exists so a particular traveler — design-led, a little tired of marketplaces — recognizes the house and writes to reserve a stay directly.`,
-          `${intake.coreGoal || "The first release should convert design-literate travelers into direct reservations."} Budget and timeline (${intake.budget || "to be confirmed"}, ${intake.timeline || "to be confirmed"}) suggest a focused marketing site with a considered reservation request, not a custom booking platform. The signature suite, L'Étoile, can be told in public. Proprietary rates and private family rooms cannot.`,
+          `${intake.projectName || n} needs a website that communicates the character of an independent boutique hotel while making direct reservations easier.`,
+          "The experience should prioritize three things: clear room information, credible photography and a straightforward booking journey. The visual direction should feel considered and welcoming, without relying on the conventions of large hotel marketplaces.",
+          "The website's primary objective is to encourage qualified visitors to explore available rooms and complete a direct reservation. The signature suite, L'Étoile, can be described in public. Proprietary rates and private family rooms cannot.",
         ),
       },
       {
         id: "audience-positioning",
         title: "Audience & Positioning",
         body: paragraphs(
-          `Primary reader: ${intake.audience || "design-literate couples and independent travelers booking a short, considered stay."} They have already stayed in beautiful rooms. They are comparing a handful of independent houses, often after an OTA stay that looked better than it felt. They will judge the maison by restraint — the photograph that is allowed to be still, the sentence that does not sell.`,
-          `Positioning line: ${n} is the house you write to when you want the room to feel inevitable. Competitors either dramatize lifestyle or flatten the stay into dates and amenities. This site should do neither. It should let materials, morning light, and a few complete rooms carry the argument.`,
+          intake.audience || "Independent travelers and couples who value distinctive accommodation, thoughtful design and a more personal hospitality experience.",
+          "Likely motivations include discovering properties with a clear identity, understanding what makes the stay distinctive and booking directly with confidence.",
+          "Demographic assumptions should be validated with the client rather than treated as established facts.",
         ),
       },
       {
@@ -422,7 +424,7 @@ function hotelBundle(intake: Intake): { sections: BriefSection[]; sitemap: Sitem
         id: "tone-voice",
         title: "Tone & Voice Guidelines",
         body: paragraphs(
-          `Voice is ${tonesList(intake)}, with a reserve of ${intake.voiceReserve}/100 (lower is more restrained). Write in complete sentences. Prefer nouns you can touch — plaster, linen, courtyard, morning coffee — over abstractions like “boutique luxury” or “unforgettable escape.” Never invent awards, famous guests, or a rate the intake has marked confidential.`,
+          `Voice is ${tonesList(intake)}, with a reserve of ${intake.voiceReserve}/100 (lower is more restrained). Write in complete sentences. Prefer specific, observable details — the aspect of a room, the materials, how breakfast is served — over abstractions like “boutique luxury” or “unforgettable escape.” Never invent awards, famous guests, or a rate the intake has marked confidential.`,
           `Do not use “hidden gem,” “our passionate team,” or “treat yourself.” The house may say “the room faces the courtyard,” “breakfast is set in the kitchen,” or “write to us with the dates you have in mind.” Captions are factual: room, aspect, material. First person plural is allowed; a signed note from the family is reserved for a single, careful letter.`,
         ),
       },
@@ -443,7 +445,7 @@ function hotelBundle(intake: Intake): { sections: BriefSection[]; sitemap: Sitem
       },
     ],
     sitemap: [
-      { id: id("page", 0), name: "Home", purpose: "Arrival, one courtyard photograph, and a calm invitation to the rooms.", sections: ["Full-bleed morning photograph", "One-sentence house stance", "Featured room", "Reserve cue"], heroCopy: "A small maison, morning light, a room that feels inevitable.", priority: true, conversionGoal: "Invite a direct reservation inquiry." },
+      { id: id("page", 0), name: "Home", purpose: "Arrival, one courtyard photograph, and a calm invitation to the rooms.", sections: ["Full-bleed morning photograph", "One-sentence house stance", "Featured room", "Reserve cue"], heroCopy: "Arrival at the house, and a clear invitation to view the rooms.", priority: true, conversionGoal: "Invite a direct reservation inquiry." },
       { id: id("page", 1), name: "Stay", purpose: "An edited index of bookable rooms, told with materials rather than amenity lists.", sections: ["Room covers", "Aspect and materials", "Quiet details"], heroCopy: "Rooms named for light, not for categories.", conversionGoal: "Help a guest choose a room.", children: [
         { id: id("page", 6), name: "Garden Room", purpose: "A quieter courtyard room for longer stays.", sections: ["Aspect", "Materials"], heroCopy: "The room that faces the lime trees.", conversionGoal: "Request the Garden Room." },
       ] },

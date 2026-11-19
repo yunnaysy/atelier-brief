@@ -7,8 +7,7 @@ function stamp(project: StudioProject): { date: string; version: string } {
     month: "long",
     year: "numeric",
   });
-  const short = project.id.slice(0, 6).toUpperCase();
-  return { date, version: `AB-${short}` };
+  return { date, version: "Version 01" };
 }
 
 export function projectToMarkdown(project: StudioProject): string {
@@ -19,7 +18,7 @@ export function projectToMarkdown(project: StudioProject): string {
     "# Atelier Brief",
     "",
     `**${intake.projectName || "Untitled brief"}**  `,
-    "A studio-grade website briefing deliverable.",
+    "Website strategy & creative direction.",
     "",
     `Client: ${intake.clientName || "—"}  `,
     `Industry: ${intake.industry || "—"}  `,

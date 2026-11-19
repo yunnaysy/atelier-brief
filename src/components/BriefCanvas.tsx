@@ -1,11 +1,9 @@
-import { TelemetryChip } from "./TelemetryChip";
-import type { BriefSection, DesignRationaleItem, Intake, Telemetry } from "../lib/types";
+import type { BriefSection, DesignRationaleItem, Intake } from "../lib/types";
 
 interface Props {
   intake: Intake;
   sections: BriefSection[];
   rationale: DesignRationaleItem[];
-  telemetry: Telemetry | null;
   busy: boolean;
   busySection: string | null;
   onEdit: (id: string, body: string) => void;
@@ -16,7 +14,6 @@ export function BriefCanvas({
   intake,
   sections,
   rationale,
-  telemetry,
   busy,
   busySection,
   onEdit,
@@ -28,7 +25,7 @@ export function BriefCanvas({
         <p className="label">Brief canvas</p>
         <h2>Set the intake, then compose a brief.</h2>
         <p>
-          Load the judge demo, choose a sample client, or write your own. Hybrid inference prefers Gemini Nano
+          Load the sample project, choose a client, or write your own. Hybrid inference prefers Gemini Nano
           so names, budgets, and proprietary notes can stay on this computer. Cloud fallback, when you approve it,
           receives reversible Privacy Shield tokens only — not a promise of complete anonymization.
         </p>
@@ -48,10 +45,7 @@ export function BriefCanvas({
             {intake.timeline ? ` · ${intake.timeline}` : ""}
           </div>
         </div>
-        {telemetry ? <TelemetryChip telemetry={telemetry} compact /> : null}
       </header>
-
-      {telemetry ? <p className="reason">{telemetry.reason}</p> : null}
 
       {sections.map((section, index) => (
         <section className="section" key={section.id} data-section={section.id}>
@@ -71,7 +65,7 @@ export function BriefCanvas({
                 "Regenerating…"
               ) : (
                 <>
-                  <span className="regen-full">Regenerate with Hybrid AI</span>
+                  <span className="regen-full">Regenerate brief</span>
                   <span className="regen-short">Regenerate</span>
                 </>
               )}

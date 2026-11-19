@@ -65,16 +65,16 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
 
   if (industry.includes("hotel") || industry.includes("hospitality") || industry.includes("aster")) {
     palette = [
-      { name: "Paper", hex: "#F7F5F0", role: "Field" },
-      { name: "Ink", hex: "#25241F", role: "Text" },
-      { name: "Terracotta", hex: "#B76E55", role: "Accent" },
-      { name: "Olive", hex: "#747C62", role: "Privacy" },
-      { name: "Blue Grey", hex: "#788D9B", role: "Secondary" },
+      { name: "Stone Paper", hex: "#F4F2EC", role: "Field" },
+      { name: "Charcoal Ink", hex: "#1C1917", role: "Text" },
+      { name: "Mist Slate", hex: "#8799A0", role: "Secondary" },
+      { name: "Deep Pine", hex: "#45584F", role: "Accent" },
+      { name: "Warm Limestone", hex: "#C5C1B6", role: "Rule" },
     ];
     narrative =
-      "A maison at morning: warm paper, charcoal ink, terracotta tile, garden olive, and a single blue-grey for reservation numbers. Typography is editorial, never decorative.";
+      "Typography should balance character with readability. Use a distinctive serif for editorial headlines and a neutral sans-serif for navigation, room information and booking actions. Maintain clear hierarchy across desktop and mobile layouts.";
     density = "airy";
-    motion = "200ms fades and 1px rule draws. No bounce, no parallax.";
+    motion = "Transitions should feel quiet and brief. Avoid bounce, parallax, or motion that competes with photography and type.";
     displayFamily = "Instrument Serif";
   }
 
@@ -110,7 +110,7 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
   if (intake.voiceReserve < 30) density = density === "compact" ? "compact" : "airy";
   if (intake.voiceReserve > 70) density = "balanced";
 
-  const displaySample = intake.clientName.trim() || intake.projectName.trim() || "Atelier";
+  const displaySample = intake.projectName.trim() || intake.clientName.trim() || "Atelier";
   const bodySample = intake.coreGoal.trim()
     ? intake.coreGoal.trim()
     : "Write for a client who will read this once, slowly, with a pencil in hand.";
@@ -126,7 +126,7 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
       {
         role: "Display",
         family: displayFamily,
-        size: density === "airy" ? "64 / 68" : "52 / 58",
+        size: density === "airy" ? "52 / 58" : "48 / 56",
         weight: "400",
         tracking: "-0.03em",
         sample: displaySample,
@@ -153,7 +153,7 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
         size: "11 / 16",
         weight: "500",
         tracking: "0.14em",
-        sample: "ON-DEVICE · GEMINI NANO",
+        sample: "Reserve · Direct stay",
       },
     ],
   };
