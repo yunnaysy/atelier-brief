@@ -60,6 +60,24 @@ npx firebase-tools deploy --only hosting   # optional, Spark Hosting
 
 Official debug-token guidance: [Use App Check with the debug provider in web apps](https://firebase.google.com/docs/app-check/web/debug-provider).
 
+
+## Firebase Hosting (Spark, $0)
+
+Target project: `atelier-brief-ai` (no billing account attached; Spark only). Config is in `firebase.json` and `.firebaserc`. Public web config belongs in a gitignored `.env.local` copied from `.env.example` — never commit it.
+
+The first time this Google account uses Firebase, the [Firebase Terms of Service](https://firebase.google.com/terms) must be accepted in the Firebase console. Official docs state this cannot be done via the Firebase CLI, REST API, or Terraform:
+
+1. Sign in as the project owner at [https://console.firebase.google.com/?forceCheckTos=true](https://console.firebase.google.com/?forceCheckTos=true) and accept the terms when prompted.
+2. Then, from this directory:
+
+```bash
+cp .env.example .env.local   # fill with the Web app SDK config
+npm run build
+npx -y firebase-tools@latest deploy --only hosting
+```
+
+The live site will be `https://atelier-brief-ai.web.app` once Hosting is deployed.
+
 ## Scripts
 
 ```bash
