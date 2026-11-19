@@ -1,12 +1,5 @@
 import type { InferenceBadge, StudioProject, WorkspaceTab } from "../lib/types";
 
-const STEPS: { id: WorkspaceTab; label: string; index: string }[] = [
-  { id: "brief", label: "Brief", index: "01" },
-  { id: "sitemap", label: "Sitemap", index: "02" },
-  { id: "art", label: "Direction", index: "03" },
-  { id: "export", label: "Export", index: "04" },
-];
-
 export function StudioSidebar({
   projects,
   activeId,
@@ -61,23 +54,6 @@ export function StudioSidebar({
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="nav-block">
-        <p className="label">Current project</p>
-        {STEPS.map((step) => (
-          <button
-            key={step.id}
-            type="button"
-            className="nav-link"
-            data-tab={step.id}
-            data-active={tab === step.id}
-            onClick={() => onTab(step.id)}
-          >
-            <span className="mono-index">{step.index}</span>
-            {step.label}
-          </button>
-        ))}
       </div>
 
       <div className="nav-foot">

@@ -43,7 +43,7 @@ export function ProjectHeader({
         <button type="button" className="btn-secondary" data-testid="present-client" onClick={onPresent}>
           Present to Client
         </button>
-        <button type="button" className="btn-primary" data-testid="header-export" onClick={onExport}>
+        <button type="button" className="btn-secondary" data-testid="header-export" onClick={onExport}>
           Export
         </button>
       </div>

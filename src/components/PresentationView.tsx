@@ -33,18 +33,24 @@ export function PresentationView({
         </button>
       </div>
 
-      <section className="presentation-cover">
-        <p className="label">Atelier Brief</p>
-        <h1>{project.intake.projectName || "Untitled brief"}</h1>
-        <p className="lede">A studio-grade website briefing deliverable.</p>
+      <section className="presentation-hero" data-testid="presentation-cover">
+        <div className="presentation-hero-inner">
+          <p className="hero-kicker">Atelier Brief</p>
+          <h1>{project.intake.projectName || "Untitled brief"}</h1>
+          <p className="lede">A studio-grade website briefing deliverable.</p>
+        </div>
+      </section>
+
+      <div className="presentation-glass">
         <dl>
           <div><dt>Client</dt><dd>{project.intake.clientName || "—"}</dd></div>
           <div><dt>Category</dt><dd>{project.intake.industry || "—"}</dd></div>
           <div><dt>Date</dt><dd>{date}</dd></div>
           <div><dt>Version</dt><dd>{version}</dd></div>
         </dl>
-      </section>
+      </div>
 
+      <div className="presentation-body">
       <section>
         <p className="label">Goal</p>
         <p>{project.intake.coreGoal || "—"}</p>
@@ -122,6 +128,7 @@ export function PresentationView({
           ))}
         </div>
       </section>
+      </div>
     </article>
   );
 }

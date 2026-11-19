@@ -19,7 +19,7 @@ async function loadDemo(page: Page) {
   await expect(page.getByRole("heading", { name: "The Aster Hotel" }).first()).toBeVisible();
 }
 
-test("atelier brief studio flow, features, and v2 screenshots", async ({ page, context }) => {
+test("atelier brief studio flow, features, and v3 screenshots", async ({ page, context }) => {
   await mkdir(shots, { recursive: true });
   const errors = await dismissOrAssertNoPageError(page);
 
@@ -55,7 +55,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   await expect(page.getByText(/No Firebase web config is present|deterministic, non-AI/i).first()).toBeVisible();
 
   await page.screenshot({
-    path: path.join(shots, "v2_desktop_brief.png"),
+    path: path.join(shots, "v3_desktop_brief.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -65,7 +65,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   await expect(page.getByTestId("privacy-receipt")).toBeVisible();
   await expect(page.getByText(/AB-\d{3}/).first()).toBeVisible();
   await page.screenshot({
-    path: path.join(shots, "v2_privacy_receipt.png"),
+    path: path.join(shots, "v3_privacy_receipt.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -76,7 +76,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   await expect(page.getByTestId("privacy-after")).toContainText("[CLIENT_NAME]");
   await expect(page.getByTestId("privacy-after")).not.toContainText('Maison "JJ" Aster');
   await page.screenshot({
-    path: path.join(shots, "v2_inspector.png"),
+    path: path.join(shots, "v3_inspector.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -91,7 +91,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   expect(pageNames).toContain("Garden Room");
   expect(pageNames).toContain("L'Étoile");
   await page.screenshot({
-    path: path.join(shots, "v2_sitemap.png"),
+    path: path.join(shots, "v3_sitemap.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -107,7 +107,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   expect(css).toContain("--display:");
   await expect(page.getByText("CSS variables copied.")).toHaveCount(0);
   await page.screenshot({
-    path: path.join(shots, "v2_art_direction.png"),
+    path: path.join(shots, "v3_art_direction.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -116,7 +116,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   await expect(page.getByTestId("export-handoff")).toBeVisible();
   await page.locator(".workspace-main").evaluate((el) => { el.scrollTop = 0; });
   await page.screenshot({
-    path: path.join(shots, "v2_export.png"),
+    path: path.join(shots, "v3_export.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -148,7 +148,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   await expect(page.getByText("jane.jj.aster@asterhotel.example")).toHaveCount(0);
   await expect(page.getByText("+33 1 42 86 17 09")).toHaveCount(0);
   await page.screenshot({
-    path: path.join(shots, "v2_presentation.png"),
+    path: path.join(shots, "v3_presentation.png"),
     scale: "device",
     animations: "disabled",
   });
@@ -165,7 +165,7 @@ test("atelier brief studio flow, features, and v2 screenshots", async ({ page, c
   await mobile.getByTestId("judge-demo").click();
   await expect(mobile.getByTestId("brief-canvas")).toBeVisible({ timeout: 15_000 });
   await mobile.screenshot({
-    path: path.join(shots, "v2_mobile.png"),
+    path: path.join(shots, "v3_mobile.png"),
     scale: "device",
     animations: "disabled",
   });

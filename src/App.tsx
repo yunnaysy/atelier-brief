@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArtDirectionSpecimen } from "./components/ArtDirectionSpecimen";
-import { BottomNav } from "./components/BottomNav";
+import { BottomNav, StageNav } from "./components/BottomNav";
 import { BriefCanvas } from "./components/BriefCanvas";
 import { ExportHandoff } from "./components/ExportHandoff";
 import { IntakeRail } from "./components/IntakeRail";
@@ -277,16 +277,18 @@ export default function App() {
             <button type="button" className="btn-secondary" data-testid="judge-demo" onClick={() => void loadJudgeDemo()} disabled={busy}>
               Load Judge Demo: The Aster Hotel
             </button>
-            <button type="button" className="btn-lime" data-testid="compose" onClick={() => void compose()} disabled={busy}>
+            <button type="button" className="btn-primary" data-testid="compose" onClick={() => void compose()} disabled={busy}>
               {busy ? "Composing…" : "Generate Brief"}
             </button>
           </div>
         </div>
 
+        <StageNav tab={tab} onTab={setTab} />
+
         <div className="bento-row" data-testid="bento-row">
           <article className="bento bento-dark">
             <div className="bento-icon" aria-hidden="true">↗</div>
-            <p className="label">Hybrid AI</p>
+            <p className="label">Hybrid AI Engine</p>
             <strong className="bento-accent">
               {badge === "on-device"
                 ? "ON_DEVICE"
@@ -296,25 +298,35 @@ export default function App() {
                     ? "LOCAL_FALLBACK_ERROR"
                     : "STUDIO_PREVIEW"}
             </strong>
-            <span>
+            <span className="mono-pill">
               {project.lastTelemetry
                 ? `${project.lastTelemetry.latencyMs} ms · ${project.lastTelemetry.model}`
                 : link.hint}
             </span>
           </article>
-          <article className="bento bento-lime">
-            <div className="bento-icon" aria-hidden="true">●</div>
-            <p className="label">Privacy Shield</p>
+          <article className="bento bento-glass">
+            <div className="bento-icon" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <path d="M12 3.5 5.5 6.2v5.1c0 4.3 2.8 7.4 6.5 8.7 3.7-1.3 6.5-4.4 6.5-8.7V6.2L12 3.5Z" />
+              </svg>
+            </div>
+            <p className="label">
+              Privacy Shield
+              <span className="status-dot status-dot-ok" title="Protected" />
+            </p>
             <strong>
               {planCount} field{planCount === 1 ? "" : "s"} protected
             </strong>
             <span>Configured confidential fields and detected emails or phones are tokenized before any cloud call.</span>
           </article>
-          <article className="bento">
+          <article className="bento bento-white">
             <div className="bento-icon" aria-hidden="true">↘</div>
             <p className="label">Workspace</p>
             <strong>Saved locally</strong>
-            <span>IndexedDB on this device · not end-to-end encrypted</span>
+            <div className="bento-pills">
+              <span className="mini-pill">IndexedDB</span>
+              <span className="mini-pill">Not E2E encrypted</span>
+            </div>
           </article>
         </div>
 
