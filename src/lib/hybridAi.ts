@@ -320,6 +320,28 @@ async function runModel(model: GenerativeModel, prompt: string) {
   return { text, source };
 }
 
+const TRANSIENT_CLOUD_ERROR = /\b(500|503|429)\b|high demand|overloaded|unavailable|try again later|resource exhausted/i;
+
+export function isTransientCloudError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return TRANSIENT_CLOUD_ERROR.test(message);
+}
+
+/** Cloud calls retry briefly on transient capacity errors (free-tier demand spikes), never on other failures. */
+async function runCloudModel(model: GenerativeModel, prompt: string, attempts = 3) {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await runModel(model, prompt);
+    } catch (error) {
+      lastError = error;
+      if (!isTransientCloudError(error) || attempt === attempts - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+    }
+  }
+  throw lastError;
+}
+
 export interface GenerateOptions {
   intake: Intake;
   privacyShield: boolean;
@@ -525,7 +547,7 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
   cloudAttempted = true;
   lastModel = config.cloudModel;
   try {
-    const result = await runModel(current.modelCloud, cloudPrompt);
+    const result = await runCloudModel(current.modelCloud, cloudPrompt);
     lastSource = result.source;
     if (result.source !== "in_cloud") {
       throw new Error(

@@ -182,7 +182,7 @@ export function humanBadgeLabel(badge: "on-device" | "cloud" | "error-fallback" 
     case "cloud":
       return "Cloud Hybrid";
     case "error-fallback":
-      return "Local Fallback";
+      return "Local Draft";
     default:
       return "Studio Preview";
   }
@@ -201,7 +201,15 @@ export function labelForBadge(badge: "on-device" | "cloud" | "error-fallback" | 
   }
 }
 
-export function statusStripCopy(badge: "on-device" | "cloud" | "error-fallback" | "preview" | "idle", fieldCount: number): string {
+export function isConsentPending(errorMessage: string | null | undefined, cloudAttempted?: boolean): boolean {
+  return !cloudAttempted && /not approved/i.test(errorMessage ?? "");
+}
+
+export function statusStripCopy(
+  badge: "on-device" | "cloud" | "error-fallback" | "preview" | "idle",
+  fieldCount: number,
+  consentPending = false,
+): string {
   const n = Math.max(0, fieldCount);
   const fields = `${n} confidential field${n === 1 ? "" : "s"}`;
   switch (badge) {
@@ -210,7 +218,9 @@ export function statusStripCopy(badge: "on-device" | "cloud" | "error-fallback" 
     case "cloud":
       return `Cloud hybrid · ${n} field${n === 1 ? "" : "s"} redacted before send`;
     case "error-fallback":
-      return "Local Fallback · AI call failed";
+      return consentPending
+        ? "Local draft · Cloud AI off until you approve redacted sharing"
+        : "Local draft · Cloud AI unavailable, composed on this device";
     default:
       return `Studio preview · No cloud call · ${fields} ready for redaction`;
   }

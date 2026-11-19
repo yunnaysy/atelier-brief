@@ -1,3 +1,5 @@
+import { Folder, Layers, Plus, ShieldCheck } from "lucide-react";
+import { Icon } from "./icons";
 import type { InferenceBadge, StudioProject, WorkspaceTab } from "../lib/types";
 import { humanBadgeLabel } from "../lib/validateBundle";
 
@@ -39,14 +41,17 @@ export function StudioSidebar({
 
       <div className="nav-block">
         <p className="label">Workspace</p>
-        <button type="button" className="nav-link" data-active={tab === "export"} onClick={() => onTab("export")}>
-          Projects
+        <button type="button" className="nav-link" data-active={tab === "export"} aria-current={tab === "export" ? "page" : undefined} onClick={() => onTab("export")}>
+          <Icon as={Folder} />
+          <span>Projects</span>
         </button>
         <button type="button" className="nav-link" data-testid="new-brief" onClick={onNew}>
-          New Brief
+          <Icon as={Plus} />
+          <span>New Brief</span>
         </button>
         <button type="button" className="nav-link" data-testid="judge-demo-nav" onClick={onJudgeDemo} disabled={demoBusy}>
-          Load sample project
+          <Icon as={Layers} />
+          <span>Load sample project</span>
         </button>
         <div className="nav-recent">
           <p className="label">Recent projects</p>
@@ -56,6 +61,7 @@ export function StudioSidebar({
               type="button"
               className="nav-link nav-recent-item"
               data-active={item.id === activeId}
+              aria-current={item.id === activeId ? "true" : undefined}
               onClick={() => onOpen(item.id)}
             >
               {item.intake.projectName || "Untitled brief"}
@@ -66,8 +72,8 @@ export function StudioSidebar({
 
       <div className="nav-foot">
         <button type="button" className="nav-link privacy-entry" data-testid="privacy-entry" onClick={onPrivacy}>
-          <span className="mono-index">AI</span>
-          Privacy &amp; AI
+          <Icon as={ShieldCheck} />
+          <span>Privacy &amp; AI</span>
           <span className="nav-badge" data-kind={badge}>
             {humanBadgeLabel(badge)}
           </span>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { badgeForFailure, badgeForSuccessfulInference, labelForBadge, validateBundle } from "./validateBundle";
+import { badgeForFailure, badgeForSuccessfulInference, labelForBadge, validateBundle, isConsentPending, statusStripCopy } from "./validateBundle";
 
 test("rejects incomplete AI output instead of backfilling it", () => {
   const result = validateBundle({
@@ -73,4 +73,13 @@ test("failure telemetry never returns cloud or on-device", () => {
   assert.equal(labelForBadge("preview"), "Studio Preview · Deterministic Non-AI");
   assert.notEqual(labelForBadge("error-fallback"), "Cloud Fallback · Firebase AI Logic");
   assert.notEqual(labelForBadge("error-fallback"), "On-Device · Gemini Nano");
+});
+
+test("no-consent status copy is calm, not an error", () => {
+  assert.equal(isConsentPending("Cloud fallback was not approved while confidential fields were present.", false), true);
+  assert.equal(isConsentPending("network down", true), false);
+  const pending = statusStripCopy("error-fallback", 11, true);
+  assert.equal(pending, "Local draft · Cloud AI off until you approve redacted sharing");
+  assert.ok(!/fail/i.test(pending));
+  assert.ok(!/fail/i.test(statusStripCopy("error-fallback", 11, false)));
 });

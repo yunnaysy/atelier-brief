@@ -4,6 +4,8 @@ import { BottomNav, StageNav } from "./components/BottomNav";
 import { BriefCanvas } from "./components/BriefCanvas";
 import { ExportHandoff } from "./components/ExportHandoff";
 import { IntakeRail } from "./components/IntakeRail";
+import { Icon } from "./components/icons";
+import { Layers } from "lucide-react";
 import { PresentationView } from "./components/PresentationView";
 import { PrivacyDrawer } from "./components/PrivacyDrawer";
 import { ProjectHeader } from "./components/ProjectHeader";
@@ -20,7 +22,7 @@ import { planPrivacyShield } from "./lib/privacyShield";
 import { receiptFromTelemetry } from "./lib/privacyReceipt";
 import type { InferenceBadge, Intake, StudioProject, ToneId, WorkspaceTab } from "./lib/types";
 import { newProject } from "./lib/types";
-import { statusStripCopy } from "./lib/validateBundle";
+import { isConsentPending, statusStripCopy } from "./lib/validateBundle";
 
 function presetIdFor(intake: Intake): string | null {
   const found = CLIENT_PRESETS.find(
@@ -268,6 +270,7 @@ export default function App() {
           {presetIdFor(project.intake) !== "aster-hotel" ? (
             <div className="strip-actions">
               <button type="button" className="btn-secondary" data-testid="judge-demo" onClick={() => void loadJudgeDemo()} disabled={busy}>
+                <Icon as={Layers} size={16} />
                 Load sample project
               </button>
             </div>
@@ -279,7 +282,7 @@ export default function App() {
         <div className="status-strip" data-testid="status-strip" data-kind={badge}>
           <p>
             <span className="status-dot" aria-hidden="true" />
-            <span>{statusStripCopy(badge, planCount)}</span>
+            <span>{statusStripCopy(badge, planCount, isConsentPending(project.lastTelemetry?.errorMessage, project.lastTelemetry?.cloudAttempted))}</span>
           </p>
           <button type="button" className="text-btn" data-testid="privacy-pill" onClick={() => setPrivacyOpen(true)}>
             View details

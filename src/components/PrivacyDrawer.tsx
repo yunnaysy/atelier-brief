@@ -3,12 +3,15 @@ import { downloadReceipt } from "../lib/privacyReceipt";
 import type { PrivacyReceipt, Telemetry } from "../lib/types";
 import { humanBadgeLabel } from "../lib/validateBundle";
 
-function nanoLabel(value: Telemetry["nano"] | undefined) {
+function nanoLabel(value: Telemetry["nano"] | undefined, source?: string | null) {
+  const usedOnDevice = source === "on_device";
   switch (value) {
     case "available":
-      return "Available (Chrome 139+ Gemini Nano ready)";
+      return usedOnDevice
+        ? "Available · used for this brief"
+        : "Reported by browser · not used for this brief";
     case "downloadable":
-      return "Downloadable (Chrome 139+ can install Gemini Nano)";
+      return usedOnDevice ? "Downloadable · used for this brief" : "Downloadable · not used for this brief";
     case "downloading":
       return "Downloading Gemini Nano";
     case "unavailable":
@@ -93,7 +96,7 @@ export function PrivacyDrawer({
                   <dl className="inspector-grid">
                     <div><dt>Inference source</dt><dd>{telemetry.inferenceSource ?? "none (non-AI or failed)"}</dd></div>
                     <div><dt>Model</dt><dd>{telemetry.model}</dd></div>
-                    <div><dt>Chrome 139+ / Gemini Nano</dt><dd>{nanoLabel(telemetry.nano)}</dd></div>
+                    <div><dt>Chrome 139+ / Gemini Nano</dt><dd>{nanoLabel(telemetry.nano, telemetry.inferenceSource)}</dd></div>
                     <div>
                       <dt>Device model</dt>
                       <dd>

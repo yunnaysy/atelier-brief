@@ -56,7 +56,15 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("brief-canvas")).toBeVisible();
   await expect(page.getByTestId("design-rationale")).toBeVisible();
   await expect(page.getByText("Design Decision / 01").first()).toBeVisible();
-  await expect(page.getByTestId("status-strip")).toContainText(/Studio preview · No cloud call/i);
+  // Unconfigured builds show Studio Preview; configured builds without cloud consent show a calm local-draft note.
+  await expect(page.getByTestId("status-strip")).toContainText(
+    /Studio preview · No cloud call|Local draft · Cloud AI off until you approve redacted sharing/i,
+  );
+  await expect(page.getByTestId("status-strip")).not.toContainText(/fail/i);
+  // Lucide icon system: decorative, monochrome, with an explicit current tab.
+  await expect(page.getByTestId("stage-nav").locator('button[aria-current="page"]')).toHaveCount(1);
+  await expect(page.getByTestId("stage-nav").locator("svg.ab-icon[aria-hidden='true']")).toHaveCount(4);
+  await expect(page.getByTestId("project-header").locator("svg.ab-icon")).toHaveCount(3);
   await expect(page.getByText("STUDIO_PREVIEW")).toHaveCount(0);
   await expect(page.getByTestId("judge-demo")).toHaveCount(0);
   await expect(page.getByText("almost smell")).toHaveCount(0);

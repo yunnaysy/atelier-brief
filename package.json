@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "firebase": "^13.4.0",
+    "lucide-react": "^1.76.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
@@ -31,6 +32,6 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.6"
   },
-  "description": "Atelier Brief \u2014 a quiet-luxury website briefing studio using Firebase AI Logic hybrid inference and client-safe Privacy Shield.",
+  "description": "Atelier Brief — a quiet-luxury website briefing studio using Firebase AI Logic hybrid inference and client-safe Privacy Shield.",
   "license": "MIT"
 }
