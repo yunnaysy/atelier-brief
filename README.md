@@ -6,7 +6,7 @@ A quiet-luxury website briefing studio for independent practices. Atelier Brief 
 
 Built for [#BuildHybridAI 2026](https://firebasehybridaihackathon.devpost.com/) with the official [Firebase AI Logic](https://firebase.google.com/docs/ai-logic/hybrid/web/get-started) hybrid web SDK (`firebase@13.4.0`).
 
-**Live demo:** https://atelier-brief-ai.web.app (Firebase Hosting, Spark plan). The public build runs in Studio Preview until a Firebase AI Logic web config is added.
+**Live demo:** https://atelier-brief-ai.web.app (Firebase Hosting, Spark plan). The public build is wired to Firebase AI Logic (Gemini Developer API, `gemini-3.5-flash-lite`, no billing): approve redacted cloud fallback in project details to run a live hybrid generation.
 
 **Live path:** Firebase **Spark** free tier only. Never enable Blaze. Never call billed image-generation models.
 
