@@ -6,6 +6,8 @@ A quiet-luxury website briefing studio for independent practices. Atelier Brief 
 
 Built for [#BuildHybridAI 2026](https://firebasehybridaihackathon.devpost.com/) with the official [Firebase AI Logic](https://firebase.google.com/docs/ai-logic/hybrid/web/get-started) hybrid web SDK (`firebase@13.4.0`).
 
+**Live demo:** https://atelier-brief-ai.web.app (Firebase Hosting, Spark plan). The public build runs in Studio Preview until a Firebase AI Logic web config is added.
+
 **Live path:** Firebase **Spark** free tier only. Never enable Blaze. Never call billed image-generation models.
 
 ## Why hybrid inference is the product
@@ -99,7 +101,7 @@ npm run test:e2e             # Playwright against the production preview
 npx -y firebase-tools@latest deploy --only hosting
 ```
 
-Target project: `atelier-brief-ai` (no billing account; Spark only). Intended live URL: `https://atelier-brief-ai.web.app`.
+Target project: `atelier-brief-ai` (no billing account; Spark only). Live URL: https://atelier-brief-ai.web.app
 
 Official debug-token guidance: [Use App Check with the debug provider in web apps](https://firebase.google.com/docs/app-check/web/debug-provider).
 

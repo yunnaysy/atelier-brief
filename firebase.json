@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "atelier-brief-ai",
     "public": "dist",
     "ignore": [
       "firebase.json",
