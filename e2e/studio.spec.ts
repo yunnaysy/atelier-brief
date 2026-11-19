@@ -13,7 +13,13 @@ async function dismissOrAssertNoPageError(page: Page) {
   return errors;
 }
 
-test("atelier brief studio flow and screenshots", async ({ page, context }) => {
+async function loadDemo(page: Page) {
+  await page.getByTestId("judge-demo").click();
+  await expect(page.getByTestId("brief-canvas")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("heading", { name: "The Aster Hotel" }).first()).toBeVisible();
+}
+
+test("atelier brief studio flow, features, and v2 screenshots", async ({ page, context }) => {
   await mkdir(shots, { recursive: true });
   const errors = await dismissOrAssertNoPageError(page);
 
@@ -35,86 +41,131 @@ test("atelier brief studio flow and screenshots", async ({ page, context }) => {
     });
   });
 
-  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  await expect(page.getByRole("heading", { name: "Atelier Brief" })).toBeVisible();
-  await expect(page.getByText("Local Preview").first()).toBeVisible();
+  await expect(page.getByText("Atelier Brief").first()).toBeVisible();
+  await expect(page.getByText("STUDIO_PREVIEW").first()).toBeVisible();
+  await expect(page.getByTestId("studio-sidebar")).toBeVisible();
+  await expect(page.getByTestId("bottom-nav")).toBeHidden();
 
-  await page.locator('[data-preset="harbor-line"]').click();
-  await expect(page.getByRole("textbox", { name: "Client name" })).toHaveValue("Harbor & Line Architects");
+  await loadDemo(page);
+  await expect(page.getByTestId("design-rationale")).toBeVisible();
+  await expect(page.getByText("Design Decision / 01").first()).toBeVisible();
+  await expect(page.getByText(/No Firebase web config is present|deterministic, non-AI/i).first()).toBeVisible();
 
-  await page.locator('[data-preset="kiln-grain"]').click();
-  await expect(page.getByRole("textbox", { name: "Client name" })).toHaveValue("Kiln & Grain");
-
-  await page.locator('[data-preset="harbor-line"]').click();
-  await page.getByTestId("compose").click();
-  await expect(page.getByTestId("brief-canvas")).toBeVisible({ timeout: 10_000 });
-  await expect(page.getByRole("heading", { name: "Harbor & Line — Studio Website" })).toBeVisible();
-  await expect(page.getByText("Executive Summary")).toBeVisible();
-  await expect(page.getByText(/Local Preview/).first()).toBeVisible();
-  await expect(page.getByText(/No Firebase web config is present/)).toBeVisible();
-
-  await page.locator(".rail").evaluate((el) => { el.scrollTop = 0; });
   await page.screenshot({
-    path: path.join(shots, "01_brief_canvas.png"),
+    path: path.join(shots, "v2_desktop_brief.png"),
     scale: "device",
     animations: "disabled",
   });
 
-  await page.locator('[data-tab="sitemap"]').click();
+  await page.getByTestId("privacy-pill").click();
+  await expect(page.getByTestId("privacy-drawer")).toBeVisible();
+  await expect(page.getByTestId("privacy-receipt")).toBeVisible();
+  await expect(page.getByText(/AB-\d{3}/).first()).toBeVisible();
+  await page.screenshot({
+    path: path.join(shots, "v2_privacy_receipt.png"),
+    scale: "device",
+    animations: "disabled",
+  });
+
+  await page.getByTestId("inspector-toggle").click();
+  await expect(page.getByTestId("hybrid-inspector")).toBeVisible();
+  await expect(page.getByTestId("privacy-diff")).toBeVisible();
+  await expect(page.getByTestId("privacy-after")).toContainText("[CLIENT_NAME]");
+  await expect(page.getByTestId("privacy-after")).not.toContainText('Maison "JJ" Aster');
+  await page.screenshot({
+    path: path.join(shots, "v2_inspector.png"),
+    scale: "device",
+    animations: "disabled",
+  });
+  await page.locator(".drawer .ghost").filter({ hasText: "Close" }).click();
+
+  await page.locator('[data-tab="sitemap"]').first().click();
   await expect(page.getByTestId("sitemap-board")).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Page name" }).first()).toHaveValue("Home");
-  await page.locator(".rail").evaluate((el) => { el.scrollTop = 0; });
+  const pageNames = await page.getByRole("textbox", { name: "Page name" }).evaluateAll((nodes) =>
+    nodes.map((node) => (node as HTMLInputElement).value),
+  );
+  expect(pageNames).toContain("Garden Room");
+  expect(pageNames).toContain("L'Étoile");
   await page.screenshot({
-    path: path.join(shots, "02_sitemap.png"),
+    path: path.join(shots, "v2_sitemap.png"),
     scale: "device",
     animations: "disabled",
   });
 
-  await page.locator('[data-tab="art"]').click();
+  await page.locator('[data-tab="art"]').first().click();
   await expect(page.getByTestId("art-direction")).toBeVisible();
-  await expect(page.getByText("Palette & contrast against the field and the ink")).toBeVisible();
-  await page.locator(".rail").evaluate((el) => { el.scrollTop = 0; });
+  await expect(page.getByText("Color study — click a swatch to copy its hex")).toBeVisible();
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByTestId("copy-css-vars").click();
+  await expect(page.getByText("CSS variables copied.")).toBeVisible();
+  const css = await page.evaluate(() => navigator.clipboard.readText());
+  expect(css).toContain(":root {");
+  expect(css).toContain("--display:");
+  await expect(page.getByText("CSS variables copied.")).toHaveCount(0);
   await page.screenshot({
-    path: path.join(shots, "03_art_direction.png"),
+    path: path.join(shots, "v2_art_direction.png"),
     scale: "device",
     animations: "disabled",
   });
 
-  await page.locator('[data-tab="export"]').click();
+  await page.locator('[data-tab="export"]').first().click();
   await expect(page.getByTestId("export-handoff")).toBeVisible();
-
-  await page.getByTestId("privacy-toggle").click();
-  await expect(page.getByRole("button", { name: /Privacy Shield off/i })).toBeVisible();
-  await page.getByTestId("privacy-toggle").click();
-  await expect(page.getByRole("button", { name: /Privacy Shield on/i })).toBeVisible();
-
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.locator(".workspace-main").evaluate((el) => { el.scrollTop = 0; });
+  await page.screenshot({
+    path: path.join(shots, "v2_export.png"),
+    scale: "device",
+    animations: "disabled",
+  });
   await page.getByTestId("copy-markdown").click();
   await expect(page.getByText("Markdown copied.")).toBeVisible();
   const markdown = await page.evaluate(() => navigator.clipboard.readText());
-  expect(markdown).toContain("# Harbor & Line — Studio Website");
-  expect(markdown).toContain("## Executive Summary");
+  expect(markdown).toContain("# Atelier Brief");
+  expect(markdown).toContain("The Aster Hotel");
+  expect(markdown).toContain("## Design Decision Rationale");
   expect(markdown).toContain("## Sitemap");
-  expect(markdown).toContain("## Art direction");
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByTestId("download-markdown").click();
   const download = await downloadPromise;
-  expect(download.suggestedFilename()).toMatch(/harbor-line.*\.md$/);
+  expect(download.suggestedFilename()).toMatch(/aster-hotel.*\.md$/);
+
+  await page.getByTestId("delete-project").first().click();
+  await expect(page.getByTestId("delete-confirm")).toBeVisible();
+  await page.getByTestId("delete-confirm").getByRole("button", { name: "Keep" }).click();
+  await expect(page.getByTestId("delete-confirm")).toHaveCount(0);
+
+  await expect(page.getByText("Markdown copied.")).toHaveCount(0);
+  await page.getByTestId("present-client").click();
+  await expect(page.getByTestId("presentation-view")).toBeVisible();
+  await expect(page.getByTestId("studio-sidebar")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "The Aster Hotel" })).toBeVisible();
+  await expect(page).toHaveURL(/presentation=1/);
+  await expect(page.getByText("14\\bis Rue des Teinturiers")).toHaveCount(0);
+  await expect(page.getByText("jane.jj.aster@asterhotel.example")).toHaveCount(0);
+  await expect(page.getByText("+33 1 42 86 17 09")).toHaveCount(0);
+  await page.screenshot({
+    path: path.join(shots, "v2_presentation.png"),
+    scale: "device",
+    animations: "disabled",
+  });
+  await page.getByTestId("exit-presentation").click();
+  await expect(page.getByTestId("studio-sidebar")).toBeVisible();
 
   const mobile = await context.newPage();
   const mobileErrors = await dismissOrAssertNoPageError(mobile);
   await mobile.setViewportSize({ width: 390, height: 844 });
   await mobile.goto("/");
   await mobile.evaluate(() => document.fonts.ready);
-  await mobile.locator('[data-preset="harbor-line"]').click();
-  await mobile.getByTestId("compose").click();
-  await expect(mobile.getByTestId("brief-canvas")).toBeVisible({ timeout: 10_000 });
-  await mobile.getByRole("button", { name: "Hide" }).click();
+  await expect(mobile.getByTestId("studio-sidebar")).toBeHidden();
+  await expect(mobile.getByTestId("bottom-nav")).toBeVisible();
+  await mobile.getByTestId("judge-demo").click();
+  await expect(mobile.getByTestId("brief-canvas")).toBeVisible({ timeout: 15_000 });
   await mobile.screenshot({
-    path: path.join(shots, "04_mobile.png"),
+    path: path.join(shots, "v2_mobile.png"),
     scale: "device",
     animations: "disabled",
   });

@@ -1,15 +1,28 @@
 import type { StudioProject } from "./types";
+import { defaultArtDirection } from "./types";
 
 const STORAGE_KEY = "atelier-brief.projects.v1";
 const ACTIVE_KEY = "atelier-brief.active.v1";
 const DB_NAME = "atelier-brief";
 const STORE = "projects";
 
+function normalize(project: StudioProject): StudioProject {
+  return {
+    ...project,
+    sections: Array.isArray(project.sections) ? project.sections : [],
+    sitemap: Array.isArray(project.sitemap) ? project.sitemap : [],
+    artDirection: project.artDirection ?? defaultArtDirection(),
+    rationale: Array.isArray(project.rationale) ? project.rationale : [],
+    lastTelemetry: project.lastTelemetry ?? null,
+    privacyReceipt: project.privacyReceipt ?? null,
+  };
+}
+
 function memorySafeParse(raw: string | null): StudioProject[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as StudioProject[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(normalize) : [];
   } catch {
     return [];
   }
@@ -54,7 +67,7 @@ export async function loadProjects(): Promise<StudioProject[]> {
     const tx = db.transaction(STORE, "readonly");
     const req = tx.objectStore(STORE).getAll();
     req.onsuccess = () => {
-      const rows = (req.result as StudioProject[]) ?? [];
+      const rows = ((req.result as StudioProject[]) ?? []).map(normalize);
       resolve(rows.length ? rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)) : local);
     };
     req.onerror = () => resolve(local);

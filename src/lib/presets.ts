@@ -10,6 +10,27 @@ export interface ClientPreset {
 
 export const CLIENT_PRESETS: ClientPreset[] = [
   {
+    id: "aster-hotel",
+    kicker: "Judge demo",
+    title: "The Aster Hotel",
+    lede: "A fictional maison with edge-case quotes, contacts, budget, and a reserved rate card.",
+    intake: {
+      projectName: "The Aster Hotel",
+      clientName: "Maison \"JJ\" Aster & Co.",
+      industry: "Independent boutique hospitality",
+      budget: "€42,000–€58,000 (design + build)",
+      timeline: "14 weeks, spring arrival",
+      tones: ["hospitable", "editorial", "quiet"],
+      voiceReserve: 34,
+      coreGoal:
+        "Book direct stays from design-led travelers who would otherwise default to an OTA, without turning the maison into a marketplace.",
+      audience:
+        "Design-literate couples and independent travelers, typically 32–58, who already stay in considered houses and will judge a room by typography, materials, and morning light.",
+      confidentialNotes:
+        "Do not publish the reserved suite rate card or the owner's private annex at 14\\bis Rue des Teinturiers.\nPress: press@asterhotel.example. The signature suite is called L'Étoile — the family résumé stays off every public template.\nPrincipal: jane.jj.aster@asterhotel.example · +33 1 42 86 17 09",
+    },
+  },
+  {
     id: "harbor-line",
     kicker: "Architecture",
     title: "Harbor & Line",

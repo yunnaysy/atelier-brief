@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test": "tsx --test src/lib/privacyShield.test.ts src/lib/validateBundle.test.ts"
   },
   "dependencies": {
     "firebase": "^13.4.0",
@@ -16,6 +17,9 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@playwright/test": "^1.65.1",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
@@ -23,9 +27,10 @@
     "@vitejs/plugin-react": "^6.1.2",
     "oxlint": "^1.90.0",
     "playwright": "^1.65.1",
+    "tsx": "^4.23.15",
     "typescript": "~7.0.2",
     "vite": "^8.3.6"
   },
-  "description": "Atelier Brief \u2014 a design-first, client-safe website briefing studio using Firebase AI Logic hybrid inference.",
+  "description": "Atelier Brief \u2014 a quiet-luxury website briefing studio using Firebase AI Logic hybrid inference and client-safe Privacy Shield.",
   "license": "MIT"
 }

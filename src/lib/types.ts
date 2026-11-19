@@ -12,7 +12,7 @@ export type ToneId =
 
 export type WorkspaceTab = "brief" | "sitemap" | "art" | "export";
 
-export type InferenceBadge = "on-device" | "cloud" | "preview";
+export type InferenceBadge = "on-device" | "cloud" | "error-fallback" | "preview";
 
 export type NanoAvailability =
   | "available"
@@ -48,6 +48,23 @@ export interface SitemapPage {
   purpose: string;
   sections: string[];
   heroCopy: string;
+  priority?: boolean;
+  conversionGoal?: string;
+  children?: SitemapPage[];
+}
+
+export interface PrivacyReceipt {
+  sessionId: string;
+  createdAt: string;
+  badge: InferenceBadge;
+  inferenceSource: "on_device" | "in_cloud" | null;
+  model: string;
+  protectedFieldCount: number;
+  tokens: string[];
+  cloudGenerationUsed: boolean;
+  localRestoration: boolean;
+  redactedPreview: string;
+  disclaimer: string;
 }
 
 export interface PaletteColor {
@@ -76,6 +93,13 @@ export interface ArtDirection {
   hierarchy: TypeSpecimen[];
 }
 
+export interface DesignRationaleItem {
+  recommendation: string;
+  reasoning: string;
+  businessObjective: string;
+  implementation: string;
+}
+
 export interface Telemetry {
   badge: InferenceBadge;
   label: string;
@@ -86,6 +110,16 @@ export interface Telemetry {
   nano: NanoAvailability;
   model: string;
   privacyShield: boolean;
+  inferenceSource: "on_device" | "in_cloud" | null;
+  cloudAttempted: boolean;
+  devicePrepared: boolean;
+  deviceProgress: number | null;
+  schemaValid: boolean;
+  schemaErrors: string[];
+  success: boolean;
+  errorMessage: string | null;
+  promptBefore: string;
+  promptAfter: string;
 }
 
 export interface StudioProject {
@@ -96,13 +130,16 @@ export interface StudioProject {
   sections: BriefSection[];
   sitemap: SitemapPage[];
   artDirection: ArtDirection;
+  rationale: DesignRationaleItem[];
   lastTelemetry: Telemetry | null;
+  privacyReceipt: PrivacyReceipt | null;
 }
 
 export interface GeneratedBundle {
   sections: BriefSection[];
   sitemap: SitemapPage[];
   artDirection: ArtDirection;
+  rationale: DesignRationaleItem[];
 }
 
 export const TONE_OPTIONS: { id: ToneId; label: string }[] = [
@@ -152,30 +189,32 @@ export function newProject(intake: Intake = emptyIntake()): StudioProject {
     sections: [],
     sitemap: [],
     artDirection: defaultArtDirection(),
+    rationale: [],
     lastTelemetry: null,
+    privacyReceipt: null,
   };
 }
 
 export function defaultArtDirection(): ArtDirection {
   return {
     narrative:
-      "A paper-and-ink studio system: warm ivory, deep typographic contrast, and motion that feels like a page turning rather than a dashboard loading.",
-    displayFamily: "Fraunces",
-    bodyFamily: "IBM Plex Sans",
+      "A paper-and-ink studio system: warm alabaster, charcoal ink, antique bronze, and motion that feels like a page turning rather than a dashboard loading.",
+    displayFamily: "Instrument Serif",
+    bodyFamily: "DM Sans",
     monoFamily: "IBM Plex Mono",
     density: "airy",
-    motion: "250ms fades and 1px rule draws; no bounce, no parallax.",
+    motion: "220ms fades and 1px rule draws; no bounce, no parallax.",
     palette: [
-      { name: "Ivory", hex: "#F7F4EE", role: "Field" },
-      { name: "Ink", hex: "#181715", role: "Text" },
-      { name: "Stone", hex: "#C9C3B8", role: "Rule" },
-      { name: "Terracotta", hex: "#C2410C", role: "Accent" },
-      { name: "Teal", hex: "#0F766E", role: "Privacy" },
+      { name: "Paper", hex: "#F7F5F0", role: "Field" },
+      { name: "Ink", hex: "#25241F", role: "Text" },
+      { name: "Border", hex: "#E6E2D9", role: "Rule" },
+      { name: "Terracotta", hex: "#B76E55", role: "Accent" },
+      { name: "Olive", hex: "#747C62", role: "Privacy" },
     ],
     hierarchy: [
       {
         role: "Display",
-        family: "Fraunces",
+        family: "Instrument Serif",
         size: "56 / 60",
         weight: "500",
         tracking: "-0.03em",
@@ -183,7 +222,7 @@ export function defaultArtDirection(): ArtDirection {
       },
       {
         role: "Section",
-        family: "Fraunces",
+        family: "Instrument Serif",
         size: "28 / 34",
         weight: "500",
         tracking: "-0.02em",
@@ -191,7 +230,7 @@ export function defaultArtDirection(): ArtDirection {
       },
       {
         role: "Body",
-        family: "IBM Plex Sans",
+        family: "DM Sans",
         size: "16 / 26",
         weight: "400",
         tracking: "0",

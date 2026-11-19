@@ -1,0 +1,156 @@
+import { useState } from "react";
+import { downloadReceipt } from "../lib/privacyReceipt";
+import type { PrivacyReceipt, Telemetry } from "../lib/types";
+
+function nanoLabel(value: Telemetry["nano"] | undefined) {
+  switch (value) {
+    case "available":
+      return "Available (Chrome 139+ Gemini Nano ready)";
+    case "downloadable":
+      return "Downloadable (Chrome 139+ can install Gemini Nano)";
+    case "downloading":
+      return "Downloading Gemini Nano";
+    case "unavailable":
+      return "Unavailable in this browser";
+    default:
+      return "Unknown";
+  }
+}
+
+export function PrivacyDrawer({
+  open,
+  receipt,
+  telemetry,
+  projectName,
+  onClose,
+}: {
+  open: boolean;
+  receipt: PrivacyReceipt | null;
+  telemetry: Telemetry | null;
+  projectName: string;
+  onClose: () => void;
+}) {
+  const [pane, setPane] = useState<"receipt" | "inspector">("receipt");
+  if (!open) return null;
+
+  const source =
+    (telemetry?.inferenceSource ?? receipt?.inferenceSource) === "on_device"
+      ? "ON_DEVICE"
+      : (telemetry?.inferenceSource ?? receipt?.inferenceSource) === "in_cloud"
+        ? "IN_CLOUD"
+        : (telemetry?.badge ?? receipt?.badge) === "error-fallback"
+          ? "LOCAL_FALLBACK_ERROR"
+          : "STUDIO_PREVIEW";
+
+  return (
+    <div className="drawer-backdrop" data-testid="privacy-drawer" onClick={onClose}>
+      <aside className="drawer" role="dialog" aria-label="Privacy and AI" onClick={(event) => event.stopPropagation()}>
+        <header className="drawer-head">
+          <div>
+            <p className="label">Privacy &amp; AI</p>
+            <h2>Privacy Receipt</h2>
+          </div>
+          <button type="button" className="ghost" onClick={onClose}>
+            Close
+          </button>
+        </header>
+        <div className="drawer-tabs">
+          <button type="button" data-active={pane === "receipt"} onClick={() => setPane("receipt")}>
+            Privacy Receipt
+          </button>
+          <button type="button" data-active={pane === "inspector"} data-testid="inspector-toggle" onClick={() => setPane("inspector")}>
+            Technical Inspector
+          </button>
+        </div>
+        <div className="drawer-body">
+          {pane === "receipt" ? (
+            <div data-testid="privacy-receipt">
+              {receipt ? (
+                <>
+                  <dl className="inspector-grid">
+                    <div><dt>Session</dt><dd>{receipt.sessionId}</dd></div>
+                    <div><dt>Inference source</dt><dd data-testid="inspector-source">{source}</dd></div>
+                    <div><dt>Model</dt><dd>{receipt.model}</dd></div>
+                    <div><dt>Protected fields</dt><dd>{receipt.protectedFieldCount}</dd></div>
+                    <div><dt>Cloud generation</dt><dd>{receipt.cloudGenerationUsed ? "Used" : "Not used"}</dd></div>
+                    <div><dt>Local restoration</dt><dd>{receipt.localRestoration ? "Tokens restored on this device" : "Not required"}</dd></div>
+                  </dl>
+                  <p className="reason">{receipt.disclaimer}</p>
+                  {receipt.tokens.length ? (
+                    <p className="reason">Placeholders: {receipt.tokens.join(", ")}</p>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    data-testid="export-receipt"
+                    onClick={() => downloadReceipt(receipt, projectName)}
+                  >
+                    Export Privacy Receipt
+                  </button>
+                </>
+              ) : (
+                <p className="reason">Compose a brief to issue a Privacy Receipt for this session.</p>
+              )}
+            </div>
+          ) : (
+            <div data-testid="hybrid-inspector">
+              {telemetry ? (
+                <>
+                  <dl className="inspector-grid">
+                    <div><dt>Inference source</dt><dd>{telemetry.inferenceSource ?? "none (non-AI or failed)"}</dd></div>
+                    <div><dt>Model</dt><dd>{telemetry.model}</dd></div>
+                    <div><dt>Chrome 139+ / Gemini Nano</dt><dd>{nanoLabel(telemetry.nano)}</dd></div>
+                    <div>
+                      <dt>Device model</dt>
+                      <dd>
+                        {telemetry.devicePrepared ? "Initialized" : "Not initialized"}
+                        {telemetry.deviceProgress != null ? ` · ${telemetry.deviceProgress}%` : ""}
+                      </dd>
+                    </div>
+                    <div><dt>Cloud network request</dt><dd>{telemetry.cloudAttempted ? "Yes — a cloud request was sent" : "No cloud request"}</dd></div>
+                    <div><dt>Latency</dt><dd>{telemetry.latencyMs} ms</dd></div>
+                    <div>
+                      <dt>Schema validation</dt>
+                      <dd data-testid="inspector-schema">
+                        {telemetry.schemaValid ? "Passed" : "Failed"}
+                        {telemetry.schemaErrors.length ? ` — ${telemetry.schemaErrors.join(" ")}` : ""}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Request result</dt>
+                      <dd>
+                        {telemetry.success ? "Succeeded" : "Failed"}
+                        {telemetry.errorMessage ? ` — ${telemetry.errorMessage}` : ""}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="diff" data-testid="privacy-diff">
+                    <div className="diff-head">
+                      <p className="label">Redaction · {telemetry.redactionCount} field{telemetry.redactionCount === 1 ? "" : "s"}</p>
+                      <p className="reason" style={{ margin: 0 }}>
+                        Before stays on this device. After is the cloud-bound payload with reversible tokens.
+                        This is not a guarantee of full anonymization of arbitrary free-text context.
+                      </p>
+                    </div>
+                    <div className="diff-grid">
+                      <figure>
+                        <figcaption>Before (on this device)</figcaption>
+                        <pre>{telemetry.promptBefore || "—"}</pre>
+                      </figure>
+                      <figure>
+                        <figcaption>After (cloud-bound payload)</figcaption>
+                        <pre data-testid="privacy-after">{telemetry.promptAfter || "—"}</pre>
+                      </figure>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="reason">Compose a brief to inspect the real inference path. This panel does not invent a cloud or on-device result.</p>
+              )}
+            </div>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}

@@ -1,5 +1,9 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import {
+  initializeAppCheck,
+  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
+} from "firebase/app-check";
 import {
   getAI,
   getGenerativeModel,
@@ -8,16 +12,17 @@ import {
   InferenceSource,
   type GenerativeModel,
 } from "firebase/ai";
-import { composeLocalBrief, composeLocalSection, ensureSectionOrder } from "./localStudio";
-import { planPrivacyShield, restoreBundle } from "./privacyShield";
+import { composeLocalBrief, composeLocalSection } from "./localStudio";
+import { payloadPreview, planPrivacyShield, restoreValue } from "./privacyShield";
 import type {
   BriefSection,
   GeneratedBundle,
+  InferenceBadge,
   Intake,
   NanoAvailability,
   Telemetry,
 } from "./types";
-import { SECTION_DEFS } from "./types";
+import { labelForBadge, validateBundle } from "./validateBundle";
 
 /**
  * Official Firebase AI Logic hybrid modes, referenced at module scope so the
@@ -31,6 +36,7 @@ export const HYBRID_MODES = {
   PREFER_IN_CLOUD: InferenceMode.PREFER_IN_CLOUD,
 } as const;
 
+/** Official Gemini Developer API free-tier text model (billing not required). */
 export const DEFAULT_CLOUD_MODEL = "gemini-3.5-flash-lite";
 
 export interface FirebaseWebConfig {
@@ -41,6 +47,7 @@ export interface FirebaseWebConfig {
   messagingSenderId: string;
   appId: string;
   recaptchaSiteKey: string;
+  appCheckProvider: "enterprise" | "v3";
   appCheckDebug: boolean;
   cloudModel: string;
 }
@@ -51,6 +58,7 @@ interface Runtime {
   modelOnDevice: GenerativeModel;
   modelCloud: GenerativeModel;
   prepared: boolean;
+  deviceProgress: number;
 }
 
 let runtime: Runtime | null = null;
@@ -58,6 +66,10 @@ let initError: string | null = null;
 
 export function readFirebaseConfig(): FirebaseWebConfig {
   const env = import.meta.env;
+  const provider = String(env.VITE_FIREBASE_APPCHECK_PROVIDER ?? "enterprise")
+    .trim()
+    .toLowerCase();
+  const debugRequested = String(env.VITE_FIREBASE_APPCHECK_DEBUG ?? "") === "true";
   return {
     apiKey: String(env.VITE_FIREBASE_API_KEY ?? "").trim(),
     authDomain: String(env.VITE_FIREBASE_AUTH_DOMAIN ?? "").trim(),
@@ -65,8 +77,13 @@ export function readFirebaseConfig(): FirebaseWebConfig {
     storageBucket: String(env.VITE_FIREBASE_STORAGE_BUCKET ?? "").trim(),
     messagingSenderId: String(env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "").trim(),
     appId: String(env.VITE_FIREBASE_APP_ID ?? "").trim(),
-    recaptchaSiteKey: String(env.VITE_FIREBASE_RECAPTCHA_V3_SITE_KEY ?? "").trim(),
-    appCheckDebug: String(env.VITE_FIREBASE_APPCHECK_DEBUG ?? "") === "true",
+    recaptchaSiteKey: String(
+      env.VITE_FIREBASE_RECAPTCHA_SITE_KEY ?? env.VITE_FIREBASE_RECAPTCHA_V3_SITE_KEY ?? "",
+    ).trim(),
+    appCheckProvider: provider === "v3" ? "v3" : "enterprise",
+    // Official debug hook is development-only. Production builds never honor the flag,
+    // so a debug token cannot leak into a Spark Hosting deploy even if the env is set.
+    appCheckDebug: Boolean(env.DEV) && debugRequested,
     cloudModel: String(env.VITE_FIREBASE_CLOUD_MODEL ?? DEFAULT_CLOUD_MODEL).trim() || DEFAULT_CLOUD_MODEL,
   };
 }
@@ -103,7 +120,7 @@ export function connectionLabel(opts: {
   if (!opts.configured || opts.previewForced) {
     return {
       state: "preview",
-      hint: "Local Preview · Connect Firebase Config",
+      hint: "Studio Preview · Deterministic Non-AI",
     };
   }
   if (opts.nano === "available") {
@@ -162,14 +179,19 @@ export function initializeFirebaseAi(config: FirebaseWebConfig = readFirebaseCon
     });
 
     if (config.appCheckDebug) {
-      // Official App Check debug hook. A token string must never be committed;
-      // `true` lets the SDK mint a local debug token and print it in the console.
+      // Official App Check debug hook. A token string must never be committed.
+      // `true` lets the SDK mint a local debug token in a private dev session.
       globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
     }
 
     if (config.recaptchaSiteKey || config.appCheckDebug) {
+      const key = config.recaptchaSiteKey || "debug-unused-site-key";
+      const provider =
+        config.appCheckProvider === "v3"
+          ? new ReCaptchaV3Provider(key)
+          : new ReCaptchaEnterpriseProvider(key);
       initializeAppCheck(app, {
-        provider: new ReCaptchaV3Provider(config.recaptchaSiteKey || "debug-unused-site-key"),
+        provider,
         isTokenAutoRefreshEnabled: true,
       });
     }
@@ -194,6 +216,7 @@ export function initializeFirebaseAi(config: FirebaseWebConfig = readFirebaseCon
         inCloudParams: cloud,
       }),
       prepared: false,
+      deviceProgress: 0,
     };
     initError = null;
     return runtime;
@@ -213,8 +236,10 @@ export async function prepareOnDeviceModel(
 ): Promise<void> {
   const current = initializeFirebaseAi();
   if (!current) return;
-  await current.modelPrefer.initializeDeviceModel((value) => {
-    onProgress?.(Math.round(value * 10000) / 100);
+  await current.modelOnDevice.initializeDeviceModel((value) => {
+    const percent = Math.round(value * 10000) / 100;
+    current.deviceProgress = percent;
+    onProgress?.(percent);
   });
   current.prepared = true;
 }
@@ -242,9 +267,17 @@ function schemaInstructions(): string {
     "motion": "...",
     "palette": [{ "name": "...", "hex": "#RRGGBB", "role": "..." }],
     "hierarchy": [{ "role": "...", "family": "...", "size": "...", "weight": "...", "tracking": "...", "sample": "..." }]
-  }
+  },
+  "rationale": [
+    {
+      "recommendation": "...",
+      "reasoning": "...",
+      "businessObjective": "...",
+      "implementation": "..."
+    }
+  ]
 }
-Write 2 short paragraphs per brief section (except Discovery Questions, which should be a numbered list of 5). Provide 5 or 6 sitemap pages. Palette must include 5 colors with real hex values. English only. No markdown fences.`;
+Write 2 short paragraphs per brief section (except Discovery Questions, which should be a numbered list of 5). Provide 5 or 6 sitemap pages with unique ids. Palette must include 5 colors with real #RRGGBB hex values. Provide at least 3 design-decision rationale items, each with recommendation, reasoning, businessObjective, and implementation. English only. No markdown fences.`;
 }
 
 function intakeBlock(intake: Intake): string {
@@ -274,42 +307,16 @@ export function extractJson(text: string): unknown {
   return JSON.parse(candidate.slice(start, end + 1));
 }
 
-function asBundle(value: unknown, intake: Intake): GeneratedBundle {
-  const fallback = composeLocalBrief(intake);
-  if (!value || typeof value !== "object") return fallback;
-  const raw = value as Partial<GeneratedBundle>;
-  const sections = Array.isArray(raw.sections) ? raw.sections : fallback.sections;
-  const sitemap = Array.isArray(raw.sitemap) && raw.sitemap.length ? raw.sitemap : fallback.sitemap;
-  const artDirection = raw.artDirection ?? fallback.artDirection;
-  const cleaned: BriefSection[] = sections
-    .filter((section): section is BriefSection => Boolean(section && section.id && section.title))
-    .map((section) => ({
-      id: String(section.id),
-      title: String(section.title),
-      body: String(section.body ?? ""),
-    }));
-  return {
-    sections: ensureSectionOrder(cleaned.length ? cleaned : fallback.sections),
-    sitemap: sitemap.map((page, index) => ({
-      id: String(page.id || `page-${index + 1}`),
-      name: String(page.name || `Page ${index + 1}`),
-      purpose: String(page.purpose || ""),
-      sections: Array.isArray(page.sections) ? page.sections.map(String) : [],
-      heroCopy: String(page.heroCopy || ""),
-    })),
-    artDirection: {
-      ...fallback.artDirection,
-      ...artDirection,
-      palette: artDirection.palette?.length ? artDirection.palette : fallback.artDirection.palette,
-      hierarchy: artDirection.hierarchy?.length ? artDirection.hierarchy : fallback.artDirection.hierarchy,
-    },
-  };
+function mapSource(value: unknown): "on_device" | "in_cloud" | null {
+  if (value === InferenceSource.ON_DEVICE || value === "ON_DEVICE") return "on_device";
+  if (value === InferenceSource.IN_CLOUD || value === "IN_CLOUD") return "in_cloud";
+  return null;
 }
 
 async function runModel(model: GenerativeModel, prompt: string) {
   const result = await model.generateContent(prompt);
   const text = result.response.text();
-  const source = result.response.inferenceSource;
+  const source = mapSource(result.response.inferenceSource);
   return { text, source };
 }
 
@@ -319,6 +326,7 @@ export interface GenerateOptions {
   sectionId?: string;
   currentSection?: BriefSection;
   onDeviceProgress?: (percent: number) => void;
+  cloudFallbackConsent?: boolean;
 }
 
 export interface GenerateResult {
@@ -327,26 +335,40 @@ export interface GenerateResult {
   telemetry: Telemetry;
 }
 
+function localPayload(options: GenerateOptions): { bundle?: GeneratedBundle; section?: BriefSection } {
+  if (options.sectionId && options.currentSection) {
+    return { section: composeLocalSection(options.intake, options.sectionId, options.currentSection) };
+  }
+  return { bundle: composeLocalBrief(options.intake) };
+}
+
 export async function generateStudioWork(options: GenerateOptions): Promise<GenerateResult> {
   const started = performance.now();
   const nano = await detectNanoAvailability();
   const config = readFirebaseConfig();
   const configured = isFirebaseConfigured(config);
   const plan = planPrivacyShield(options.intake);
-  const redactionCount = options.privacyShield ? plan.fields.length : 0;
-  const workingIntake = options.privacyShield && redactionCount > 0 ? plan.redactedIntake : options.intake;
+  const preview = payloadPreview(options.intake, plan);
+  const redactionCount = plan.fields.length;
+  const workingIntake = redactionCount > 0 ? plan.redactedIntake : options.intake;
+  const diagnostics: string[] = [];
+  let cloudAttempted = false;
+  let devicePrepared = false;
+  let deviceProgress: number | null = null;
+  let lastSource: "on_device" | "in_cloud" | null = null;
+  let lastModel = configured ? config.cloudModel : "local-studio";
 
   const finish = (
-    badge: Telemetry["badge"],
-    label: string,
+    badge: InferenceBadge,
     reason: string,
     model: string,
     payload: { bundle?: GeneratedBundle; section?: BriefSection },
+    extras: { schemaValid: boolean; schemaErrors: string[]; success: boolean; errorMessage: string | null },
   ): GenerateResult => ({
     ...payload,
     telemetry: {
       badge,
-      label,
+      label: labelForBadge(badge),
       reason,
       latencyMs: Math.round(performance.now() - started),
       redactionCount: badge === "on-device" ? 0 : redactionCount,
@@ -354,127 +376,201 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
       nano,
       model,
       privacyShield: options.privacyShield,
+      inferenceSource: lastSource,
+      cloudAttempted,
+      devicePrepared,
+      deviceProgress,
+      schemaValid: extras.schemaValid,
+      schemaErrors: extras.schemaErrors,
+      success: extras.success,
+      errorMessage: extras.errorMessage,
+      promptBefore: preview.before,
+      promptAfter: preview.after,
     },
   });
 
   if (!configured) {
-    if (options.sectionId && options.currentSection) {
-      return finish(
-        "preview",
-        "Local Preview · Connect Firebase Config",
-        "No Firebase web config is present, so the studio composed this section locally. Connect a Spark project to enable Firebase AI Logic hybrid inference.",
-        "local-studio",
-        { section: composeLocalSection(options.intake, options.sectionId, options.currentSection) },
-      );
-    }
     return finish(
       "preview",
-      "Local Preview · Connect Firebase Config",
-      "No Firebase web config is present, so the studio composed this brief locally. The full interface is reviewable; hybrid inference starts once Spark config is connected.",
+      "No Firebase web config is present, so the studio composed this work with a deterministic, non-AI preview. Connect a Spark project to enable Firebase AI Logic hybrid inference.",
       "local-studio",
-      { bundle: composeLocalBrief(options.intake) },
+      localPayload(options),
+      { schemaValid: true, schemaErrors: [], success: true, errorMessage: null },
     );
   }
 
   const current = initializeFirebaseAi(config);
   if (!current) {
-    const reason = firebaseInitError() ?? "Firebase initialized incorrectly.";
-    const fallback = options.sectionId && options.currentSection
-      ? { section: composeLocalSection(options.intake, options.sectionId, options.currentSection) }
-      : { bundle: composeLocalBrief(options.intake) };
-    return finish("preview", "Local Preview · Connect Firebase Config", reason, "local-studio", fallback);
+    return finish(
+      "error-fallback",
+      `Firebase AI Logic failed to initialize (${initError ?? "unknown error"}). Showing the deterministic local studio instead.`,
+      "local-studio",
+      localPayload(options),
+      { schemaValid: false, schemaErrors: [], success: false, errorMessage: initError },
+    );
   }
 
-  try {
-    await prepareOnDeviceModel(options.onDeviceProgress);
-  } catch {
-    // initializeDeviceModel can fail when Chrome Built-in AI is absent.
-    // PREFER_ON_DEVICE / ONLY_IN_CLOUD still remain available.
-  }
+  const cloudPrompt = options.sectionId && options.currentSection
+    ? [
+        "Revise a single section of a website brief. Return JSON: { \"sections\": [{ \"id\", \"title\", \"body\" }] } with only that section.",
+        `Section id: ${options.sectionId}`,
+        `Current title: ${options.currentSection.title}`,
+        `Current body:\n${options.currentSection.body}`,
+        "",
+        "Intake (confidential values already replaced with Privacy Shield tokens):",
+        intakeBlock(workingIntake),
+      ].join("\n")
+    : [
+        "Compose a complete website brief for a design studio handoff.",
+        schemaInstructions(),
+        "",
+        "Intake (confidential values already replaced with Privacy Shield tokens):",
+        intakeBlock(workingIntake),
+      ].join("\n");
 
-  const fullPrompt = options.sectionId
-    ? `Revise only the "${SECTION_DEFS.find((item) => item.id === options.sectionId)?.title ?? options.sectionId}" section of a website brief.\n${intakeBlock(options.intake)}\n${schemaInstructions()}\nReturn JSON with a "sections" array containing that one section (same id), and you may omit sitemap and artDirection.`
-    : `Compose a complete, client-ready website brief for a design studio.\n${intakeBlock(options.intake)}\n${schemaInstructions()}`;
+  const devicePrompt = options.sectionId && options.currentSection
+    ? [
+        "Revise a single section of a website brief. Return JSON: { \"sections\": [{ \"id\", \"title\", \"body\" }] } with only that section.",
+        `Section id: ${options.sectionId}`,
+        `Current title: ${options.currentSection.title}`,
+        `Current body:\n${options.currentSection.body}`,
+        "",
+        "Intake (this request stays on the device; real client values may be present):",
+        intakeBlock(options.intake),
+      ].join("\n")
+    : [
+        "Compose a complete website brief for a design studio handoff.",
+        schemaInstructions(),
+        "",
+        "Intake (this request stays on the device; real client values may be present):",
+        intakeBlock(options.intake),
+      ].join("\n");
 
-  const redactedPrompt = options.sectionId
-    ? `Revise only the "${SECTION_DEFS.find((item) => item.id === options.sectionId)?.title ?? options.sectionId}" section of a website brief.\n${intakeBlock(workingIntake)}\n${schemaInstructions()}\nReturn JSON with a "sections" array containing that one section (same id), and you may omit sitemap and artDirection.`
-    : `Compose a complete, client-ready website brief for a design studio.\n${intakeBlock(workingIntake)}\n${schemaInstructions()}`;
+  const mode = options.sectionId ? "section" as const : "full" as const;
 
-  const nanoReady = nano === "available" || nano === "downloadable" || nano === "downloading";
-
-  const pack = (parsed: unknown) => {
-    const restored = options.privacyShield ? restoreBundle(parsed, plan) : parsed;
-    if (options.sectionId) {
-      const bundle = asBundle(restored, options.intake);
-      return {
-        section: bundle.sections.find((item) => item.id === options.sectionId) ?? options.currentSection,
-      };
+  const accept = (raw: unknown) => {
+    const restored = restoreValue(raw, plan);
+    const checked = validateBundle(restored, mode, options.sectionId);
+    if (!checked.ok || !checked.bundle) {
+      return { ok: false as const, errors: checked.errors };
     }
-    return { bundle: asBundle(restored, options.intake) };
+    if (mode === "section") {
+      const section = checked.bundle.sections.find((item) => item.id === options.sectionId)
+        ?? checked.bundle.sections[0];
+      if (!section) return { ok: false as const, errors: ["The model did not return the requested section."] };
+      return { ok: true as const, payload: { section }, errors: [] };
+    }
+    return { ok: true as const, payload: { bundle: checked.bundle }, errors: [] };
   };
 
-  try {
-    if (options.privacyShield && nanoReady) {
-      try {
-        const onDevice = await runModel(current.modelOnDevice, fullPrompt);
-        const parsed = extractJson(onDevice.text);
-        if (options.sectionId) {
+  if (nano !== "unavailable") {
+    try {
+      if (!current.prepared) {
+        await current.modelOnDevice.initializeDeviceModel((value) => {
+          current.deviceProgress = Math.round(value * 10000) / 100;
+          deviceProgress = current.deviceProgress;
+          options.onDeviceProgress?.(current.deviceProgress);
+        });
+        current.prepared = true;
+      }
+      devicePrepared = current.prepared;
+      deviceProgress = current.deviceProgress;
+      lastModel = "gemini-nano";
+      const result = await runModel(current.modelOnDevice, devicePrompt);
+      lastSource = result.source;
+      if (result.source === "on_device") {
+        const parsed = extractJson(result.text);
+        const accepted = accept(parsed);
+        if (accepted.ok) {
           return finish(
             "on-device",
-            "On-Device · Gemini Nano",
-            "Privacy Shield kept confidential fields on-device. Chrome Built-in AI (Gemini Nano) composed this section locally.",
+            "This brief was composed on-device with Gemini Nano. Client values did not leave this computer.",
             "gemini-nano",
-            pack(parsed),
+            accepted.payload,
+            { schemaValid: true, schemaErrors: [], success: true, errorMessage: null },
           );
         }
-        return finish(
-          "on-device",
-          "On-Device · Gemini Nano",
-          "Privacy Shield kept confidential fields on-device. Chrome Built-in AI (Gemini Nano) composed this brief locally.",
-          "gemini-nano",
-          pack(parsed),
+        diagnostics.push(`On-device output failed schema validation: ${accepted.errors.join(" ")}`);
+      } else {
+        diagnostics.push(
+          `ONLY_ON_DEVICE returned inferenceSource=${result.source ?? "unknown"}, which cannot be badged as on-device.`,
         );
-      } catch {
-        // Fall through to a redacted cloud call so confidential fields never travel unmasked.
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "On-device inference failed.";
+      diagnostics.push(`On-device inference failed: ${message}`);
+      devicePrepared = current.prepared;
+      deviceProgress = current.deviceProgress;
     }
+  } else {
+    diagnostics.push("Chrome Built-in AI (Gemini Nano) is unavailable in this browser.");
+  }
 
-    const model = options.privacyShield ? current.modelCloud : current.modelPrefer;
-    const prompt = options.privacyShield ? redactedPrompt : fullPrompt;
-    const result = await runModel(model, prompt);
-    const usedOnDevice = result.source === InferenceSource.ON_DEVICE;
-    const payload = pack(extractJson(result.text));
+  const confidentialPresent = plan.fields.length > 0;
+  if (confidentialPresent && !options.cloudFallbackConsent) {
+    return finish(
+      "error-fallback",
+      `${diagnostics.join(" ")} Cloud fallback was not approved. Confidential intake fields are present, so the studio did not send a request to Firebase AI Logic. Approve redacted cloud fallback to continue, or keep composing on this device.`.trim(),
+      lastModel,
+      localPayload(options),
+      {
+        schemaValid: false,
+        schemaErrors: diagnostics,
+        success: false,
+        errorMessage: "Cloud fallback was not approved while confidential fields were present.",
+      },
+    );
+  }
 
-    if (usedOnDevice) {
-      return finish(
-        "on-device",
-        "On-Device · Gemini Nano",
-        "Firebase AI Logic completed this work on-device with Gemini Nano.",
-        "gemini-nano",
-        payload,
+  cloudAttempted = true;
+  lastModel = config.cloudModel;
+  try {
+    const result = await runModel(current.modelCloud, cloudPrompt);
+    lastSource = result.source;
+    if (result.source !== "in_cloud") {
+      throw new Error(
+        `ONLY_IN_CLOUD returned inferenceSource=${result.source ?? "unknown"}, which cannot be badged as cloud inference.`,
       );
     }
-
+    const parsed = extractJson(result.text);
+    const accepted = accept(parsed);
+    if (!accepted.ok) {
+      return finish(
+        "error-fallback",
+        `The Firebase AI Logic response failed strict schema validation (${accepted.errors.join(" ")}). The studio did not label incomplete model JSON as a successful AI brief.`,
+        config.cloudModel,
+        localPayload(options),
+        {
+          schemaValid: false,
+          schemaErrors: accepted.errors,
+          success: false,
+          errorMessage: accepted.errors.join(" "),
+        },
+      );
+    }
     return finish(
       "cloud",
-      "Cloud Fallback · Firebase AI Logic",
-      options.privacyShield
-        ? `On-device inference was unavailable, so the studio called ${config.cloudModel} after reversible Privacy Shield redaction (${redactionCount} field${redactionCount === 1 ? "" : "s"}). Tokens were restored locally before display.`
-        : `Firebase AI Logic used the cloud model ${config.cloudModel}. Privacy Shield was off, so confidential fields were not redacted.`,
+      confidentialPresent
+        ? "Gemini Nano was unavailable or returned an invalid brief, so Firebase AI Logic composed this work in the cloud. Privacy Shield replaced configured confidential fields and detected emails/phones with reversible tokens before transmission; this is not a guarantee of full anonymization of arbitrary free-text context."
+        : "Gemini Nano was unavailable or returned an invalid brief, so Firebase AI Logic composed this work in the cloud.",
       config.cloudModel,
-      payload,
+      accepted.payload,
+      { schemaValid: true, schemaErrors: [], success: true, errorMessage: null },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Generation failed.";
-    const fallback = options.sectionId && options.currentSection
-      ? { section: composeLocalSection(options.intake, options.sectionId, options.currentSection) }
-      : { bundle: composeLocalBrief(options.intake) };
+    const message = error instanceof Error ? error.message : "Cloud inference failed.";
+    diagnostics.push(`Cloud inference failed: ${message}`);
     return finish(
-      configured ? "cloud" : "preview",
-      configured ? "Cloud Fallback · Firebase AI Logic" : "Local Preview · Connect Firebase Config",
-      `Hybrid inference did not complete (${message}). The studio used a local composition so the workspace remains usable.`,
-      configured ? config.cloudModel : "local-studio",
-      fallback,
+      "error-fallback",
+      `${diagnostics.join(" ")} Showing the deterministic local studio instead.`,
+      config.cloudModel,
+      localPayload(options),
+      {
+        schemaValid: false,
+        schemaErrors: diagnostics,
+        success: false,
+        errorMessage: message,
+      },
     );
   }
 }

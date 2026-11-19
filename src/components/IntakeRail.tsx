@@ -6,6 +6,7 @@ import { TONE_OPTIONS } from "../lib/types";
 interface Props {
   intake: Intake;
   privacyShield: boolean;
+  cloudConsent: boolean;
   busy: boolean;
   collapsed: boolean;
   activePresetId: string | null;
@@ -13,13 +14,16 @@ interface Props {
   onChange: (intake: Intake) => void;
   onToggleTone: (id: ToneId) => void;
   onPreset: (id: string) => void;
+  onJudgeDemo: () => void;
   onToggleShield: () => void;
+  onToggleConsent: () => void;
   onCompose: () => void;
 }
 
 export function IntakeRail({
   intake,
   privacyShield,
+  cloudConsent,
   busy,
   collapsed,
   activePresetId,
@@ -27,10 +31,13 @@ export function IntakeRail({
   onChange,
   onToggleTone,
   onPreset,
+  onJudgeDemo,
   onToggleShield,
+  onToggleConsent,
   onCompose,
 }: Props) {
   const plan = planPrivacyShield(intake);
+  const confidential = plan.fields.length > 0;
 
   const set = <K extends keyof Intake>(key: K, value: Intake[K]) => {
     onChange({ ...intake, [key]: value });
@@ -41,16 +48,29 @@ export function IntakeRail({
       <div className="rail-head">
         <h2>Intake</h2>
         <button type="button" className="ghost mobile-toggle" onClick={onToggleCollapsed}>
-          {collapsed ? "Open" : "Hide"}
+          Close
         </button>
       </div>
 
       <div className="rail-body">
-        <p className="label" style={{ margin: "0 0 0.45rem" }}>
+        <button
+          type="button"
+          className="judge-demo"
+          data-testid="judge-demo-drawer"
+          data-active={activePresetId === "aster-hotel"}
+          onClick={onJudgeDemo}
+          disabled={busy}
+        >
+          <span className="kicker label">One-click guided demo</span>
+          <strong>Load Judge Demo: The Aster Hotel</strong>
+          <span>A realistic fictional client, including quotes, contacts, budget, and confidential notes.</span>
+        </button>
+
+        <p className="label" style={{ margin: "1.15rem 0 0.45rem" }}>
           Sample clients
         </p>
         <div className="presets">
-          {CLIENT_PRESETS.map((preset) => (
+          {CLIENT_PRESETS.filter((preset) => preset.id !== "aster-hotel").map((preset) => (
             <button
               key={preset.id}
               type="button"
@@ -161,16 +181,17 @@ export function IntakeRail({
           <textarea
             value={intake.confidentialNotes}
             onChange={(event) => set("confidentialNotes", event.target.value)}
-            placeholder="Names, addresses, pricing, contacts — locked when possible."
+            placeholder="Names, addresses, pricing, contacts — tokenized before any cloud call."
           />
         </label>
 
         <div className="lock-row">
           <p>
-            Privacy Shield protects {plan.fields.length} confidential field
+            Privacy Shield is ready to tokenize {plan.fields.length} confidential field
             {plan.fields.length === 1 ? "" : "s"}
             {plan.fields.length ? ` (${plan.fields.map((field) => field.token).join(", ")})` : ""}.
-            On-device keeps them on this computer; cloud calls receive reversible tokens only.
+            It redacts configured confidential fields and detected emails or phones before any cloud
+            transmission. It does not guarantee full anonymization of arbitrary free-text context.
           </p>
           <button
             type="button"
@@ -182,7 +203,21 @@ export function IntakeRail({
           />
         </div>
 
-        <button type="button" className="compose" data-testid="compose" onClick={onCompose} disabled={busy}>
+        {confidential ? (
+          <label className="consent" data-testid="cloud-consent">
+            <input
+              type="checkbox"
+              checked={cloudConsent}
+              onChange={onToggleConsent}
+            />
+            <span>
+              Approve redacted cloud fallback if Gemini Nano is unavailable. The cloud model will receive
+              the tokenized payload only — never unredacted names, budgets, or contacts from configured fields.
+            </span>
+          </label>
+        ) : null}
+
+        <button type="button" className="compose" data-testid="compose-drawer" onClick={onCompose} disabled={busy}>
           {busy ? "Composing…" : "Compose brief"}
         </button>
       </div>

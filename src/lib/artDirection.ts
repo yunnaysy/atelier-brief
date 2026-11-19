@@ -47,7 +47,7 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
   let narrative = base.narrative;
   let density: ArtDirection["density"] = "airy";
   let motion = base.motion;
-  let displayFamily = "Fraunces";
+  let displayFamily = "Instrument Serif";
 
   if (industry.includes("architect") || has(intake, "material", "quiet")) {
     palette = [
@@ -63,7 +63,22 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
     motion = "Slow 280ms fades, hairline rules that draw once. No hover leaps.";
   }
 
-  if (industry.includes("coffee") || industry.includes("roaster") || has(intake, "warm", "hospitable")) {
+  if (industry.includes("hotel") || industry.includes("hospitality") || industry.includes("aster")) {
+    palette = [
+      { name: "Paper", hex: "#F7F5F0", role: "Field" },
+      { name: "Ink", hex: "#25241F", role: "Text" },
+      { name: "Terracotta", hex: "#B76E55", role: "Accent" },
+      { name: "Olive", hex: "#747C62", role: "Privacy" },
+      { name: "Blue Grey", hex: "#788D9B", role: "Secondary" },
+    ];
+    narrative =
+      "A maison at morning: warm paper, charcoal ink, terracotta tile, garden olive, and a single blue-grey for reservation numbers. Typography is editorial, never decorative.";
+    density = "airy";
+    motion = "200ms fades and 1px rule draws. No bounce, no parallax.";
+    displayFamily = "Instrument Serif";
+  }
+
+  if (industry.includes("coffee") || industry.includes("roaster") || (has(intake, "warm", "hospitable") && !industry.includes("hotel") && !industry.includes("hospitality"))) {
     palette = [
       { name: "Cream", hex: "#F3EBE0", role: "Field" },
       { name: "Espresso", hex: "#2A211C", role: "Text" },
@@ -75,7 +90,7 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
       "A cupping table in type: cream paper, espresso ink, terracotta as the tasting note, and a leaf green reserved for origin and season.";
     density = "balanced";
     motion = "Soft 220ms ease, cards that settle rather than pop. Preserve steam, not bounce.";
-    displayFamily = "Fraunces";
+    displayFamily = "Instrument Serif";
   }
 
   if (industry.includes("fintech") || industry.includes("compliance") || has(intake, "precise", "formal")) {
@@ -112,7 +127,7 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
         role: "Display",
         family: displayFamily,
         size: density === "airy" ? "64 / 68" : "52 / 58",
-        weight: "500",
+        weight: "400",
         tracking: "-0.03em",
         sample: displaySample,
       },
@@ -120,13 +135,13 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
         role: "Section",
         family: displayFamily,
         size: "28 / 34",
-        weight: "500",
+        weight: "400",
         tracking: "-0.02em",
         sample: intake.industry || "A brief, not a pitch deck.",
       },
       {
         role: "Body",
-        family: "IBM Plex Sans",
+        family: "DM Sans",
         size: density === "compact" ? "15 / 24" : "16 / 26",
         weight: "400",
         tracking: "0",

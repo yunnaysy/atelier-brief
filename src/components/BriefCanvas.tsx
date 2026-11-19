@@ -1,9 +1,10 @@
 import { TelemetryChip } from "./TelemetryChip";
-import type { BriefSection, Intake, Telemetry } from "../lib/types";
+import type { BriefSection, DesignRationaleItem, Intake, Telemetry } from "../lib/types";
 
 interface Props {
   intake: Intake;
   sections: BriefSection[];
+  rationale: DesignRationaleItem[];
   telemetry: Telemetry | null;
   busy: boolean;
   busySection: string | null;
@@ -14,6 +15,7 @@ interface Props {
 export function BriefCanvas({
   intake,
   sections,
+  rationale,
   telemetry,
   busy,
   busySection,
@@ -26,9 +28,9 @@ export function BriefCanvas({
         <p className="label">Brief canvas</p>
         <h2>Set the intake, then compose a brief.</h2>
         <p>
-          Choose a sample client or write your own. Hybrid inference prefers Gemini Nano
-          so names, budgets, and proprietary notes can stay on this computer. Cloud
-          fallback, when needed, receives reversible Privacy Shield tokens only.
+          Load the judge demo, choose a sample client, or write your own. Hybrid inference prefers Gemini Nano
+          so names, budgets, and proprietary notes can stay on this computer. Cloud fallback, when you approve it,
+          receives reversible Privacy Shield tokens only — not a promise of complete anonymization.
         </p>
       </div>
     );
@@ -83,6 +85,45 @@ export function BriefCanvas({
           />
         </section>
       ))}
+
+      {rationale.length ? (
+        <section className="rationale" data-testid="design-rationale">
+          <div className="section-head">
+            <h3>
+              <span className="section-index">{String(sections.length + 1).padStart(2, "0")}</span>
+              Design Decisions
+            </h3>
+          </div>
+          <p className="reason">
+            Strategic recommendations from the same composition pass — so the brief reads like a design director,
+            not a form.
+          </p>
+          <ol className="rationale-list">
+            {rationale.map((item, index) => (
+              <li key={`${item.recommendation}-${index}`}>
+                <p className="rationale-title">
+                  <span className="label">Design Decision / {String(index + 1).padStart(2, "0")}</span>
+                  {item.recommendation}
+                </p>
+                <dl>
+                  <div>
+                    <dt>Reasoning</dt>
+                    <dd>{item.reasoning}</dd>
+                  </div>
+                  <div>
+                    <dt>Business objective</dt>
+                    <dd>{item.businessObjective}</dd>
+                  </div>
+                  <div>
+                    <dt>Implementation</dt>
+                    <dd>{item.implementation}</dd>
+                  </div>
+                </dl>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
     </article>
   );
 }
