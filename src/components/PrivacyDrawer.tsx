@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { downloadReceipt } from "../lib/privacyReceipt";
-import type { PrivacyReceipt, Telemetry } from "../lib/types";
+import type { PhotoCredit, PrivacyReceipt, Telemetry } from "../lib/types";
 import { humanBadgeLabel } from "../lib/validateBundle";
 
 function nanoLabel(value: Telemetry["nano"] | undefined, source?: string | null) {
@@ -105,6 +105,22 @@ export function PrivacyDrawer({
                   <p className="reason">{receipt.disclaimer}</p>
                   {receipt.tokens.length ? (
                     <p className="reason">Placeholders: {receipt.tokens.join(", ")}</p>
+                  ) : null}
+                  {receipt.photoCredits?.length ? (
+                    <div className="receipt-credits" data-testid="receipt-photo-credits">
+                      <p className="label">Reference photograph credits</p>
+                      <ul>
+                        {receipt.photoCredits.map((photo: PhotoCredit) => (
+                          <li key={photo.id}>
+                            {photo.alt} — <a href={photo.photographerUrl} target="_blank" rel="noreferrer">{photo.photographer}</a>
+                            {", "}
+                            <a href={photo.sourceUrl} target="_blank" rel="noreferrer">{photo.source}</a>
+                            {", "}
+                            <a href={photo.licenseUrl} target="_blank" rel="noreferrer">{photo.license}</a>.
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   ) : null}
                   {telemetry?.promptAfter ? (
                     <div className="sent-payload" data-testid="privacy-sent-payload">

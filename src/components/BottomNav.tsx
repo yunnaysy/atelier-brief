@@ -1,4 +1,4 @@
-import { Compass, FileText, Network, Upload, type LucideIcon } from "lucide-react";
+import { Compass, FileText, Globe, Network, Upload, type LucideIcon } from "lucide-react";
 import { Icon } from "./icons";
 import type { WorkspaceTab } from "../lib/types";
 
@@ -6,6 +6,7 @@ const ITEMS: { id: WorkspaceTab; label: string; icon: LucideIcon }[] = [
   { id: "brief", label: "Brief", icon: FileText },
   { id: "sitemap", label: "Sitemap", icon: Network },
   { id: "art", label: "Direction", icon: Compass },
+  { id: "site", label: "Website", icon: Globe },
   { id: "export", label: "Export", icon: Upload },
 ];
 

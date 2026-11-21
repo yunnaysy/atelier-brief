@@ -10,9 +10,11 @@ import { PresentationView } from "./components/PresentationView";
 import { PrivacyDrawer } from "./components/PrivacyDrawer";
 import { ProjectHeader } from "./components/ProjectHeader";
 import { SitemapStudio } from "./components/SitemapStudio";
+import { WebsiteStudio } from "./components/WebsiteStudio";
 import { StudioSidebar } from "./components/StudioSidebar";
 import {
   generateStudioWork,
+  generateWebsiteWork,
   isFirebaseConfigured,
 } from "./lib/hybridAi";
 import { copyText, downloadMarkdown, projectToMarkdown } from "./lib/markdown";
@@ -20,6 +22,7 @@ import { loadActiveId, loadProjects, saveActiveId, saveProjects } from "./lib/pe
 import { CLIENT_PRESETS } from "./lib/presets";
 import { planPrivacyShield } from "./lib/privacyShield";
 import { receiptFromTelemetry } from "./lib/privacyReceipt";
+import { uniqueCredits } from "./lib/referencePhotos";
 import type { InferenceBadge, Intake, StudioProject, ToneId, WorkspaceTab } from "./lib/types";
 import { newProject } from "./lib/types";
 import { isConsentPending, statusStripCopy } from "./lib/validateBundle";
@@ -152,6 +155,37 @@ export default function App() {
     } finally {
       setBusy(false);
       setBusySection(null);
+    }
+  };
+
+
+  const buildWebsite = async () => {
+    if (!project.sections.length) {
+      setToast("Generate a brief first, then build the website.");
+      setTab("brief");
+      return;
+    }
+    setBusy(true);
+    try {
+      const result = await generateWebsiteWork({
+        intake: project.intake,
+        sections: project.sections,
+        sitemap: project.sitemap,
+        artDirection: project.artDirection,
+        privacyShield,
+        cloudFallbackConsent: cloudConsent,
+      });
+      const credits = uniqueCredits(result.site.photoIds);
+      const receipt = receiptFromTelemetry(result.telemetry, project.privacyReceipt?.sessionId, credits);
+      updateProject((current) => ({
+        ...current,
+        site: result.site,
+        lastTelemetry: result.telemetry,
+        privacyReceipt: receipt,
+      }));
+      setTab("site");
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -309,6 +343,16 @@ export default function App() {
             <SitemapStudio pages={project.sitemap} onChange={(sitemap) => updateProject({ sitemap })} />
           ) : null}
           {tab === "art" ? <ArtDirectionSpecimen art={project.artDirection} /> : null}
+          {tab === "site" ? (
+            <WebsiteStudio
+              intake={project.intake}
+              art={project.artDirection}
+              site={project.site}
+              busy={busy}
+              canBuild={project.sections.length > 0}
+              onBuild={() => void buildWebsite()}
+            />
+          ) : null}
           {tab === "export" ? (
             <ExportHandoff
               project={project}

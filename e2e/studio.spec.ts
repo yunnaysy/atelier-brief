@@ -63,7 +63,7 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("status-strip")).not.toContainText(/fail/i);
   // Lucide icon system: decorative, monochrome, with an explicit current tab.
   await expect(page.getByTestId("stage-nav").locator('button[aria-current="page"]')).toHaveCount(1);
-  await expect(page.getByTestId("stage-nav").locator("svg.ab-icon[aria-hidden='true']")).toHaveCount(4);
+  await expect(page.getByTestId("stage-nav").locator("svg.ab-icon[aria-hidden='true']")).toHaveCount(5);
   await expect(page.getByTestId("project-header").locator("svg.ab-icon")).toHaveCount(3);
   await expect(page.getByText("STUDIO_PREVIEW")).toHaveCount(0);
   await expect(page.getByTestId("judge-demo")).toHaveCount(0);

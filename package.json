@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "test:e2e": "playwright test",
-    "test": "tsx --test src/lib/privacyShield.test.ts src/lib/validateBundle.test.ts"
+    "test": "tsx --test src/lib/privacyShield.test.ts src/lib/validateBundle.test.ts src/lib/website.test.ts"
   },
   "dependencies": {
     "firebase": "^13.4.0",

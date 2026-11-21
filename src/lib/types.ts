@@ -10,7 +10,7 @@ export type ToneId =
   | "hospitable"
   | "formal";
 
-export type WorkspaceTab = "brief" | "sitemap" | "art" | "export";
+export type WorkspaceTab = "brief" | "sitemap" | "art" | "site" | "export";
 
 export type InferenceBadge = "on-device" | "cloud" | "error-fallback" | "preview";
 
@@ -53,6 +53,25 @@ export interface SitemapPage {
   children?: SitemapPage[];
 }
 
+export type PhotoRole = "hero" | "lobby" | "lounge" | "room" | "pool" | "dining" | "detail" | "spa";
+
+export interface PhotoCredit {
+  id: string;
+  file: string;
+  role: PhotoRole;
+  alt: string;
+  photographer: string;
+  photographerUrl: string;
+  sourceUrl: string;
+  license: string;
+  licenseUrl: string;
+  source: string;
+  subjectNote: string;
+  width: number;
+  height: number;
+  bytes?: number;
+}
+
 export interface PrivacyReceipt {
   sessionId: string;
   createdAt: string;
@@ -65,6 +84,7 @@ export interface PrivacyReceipt {
   localRestoration: boolean;
   redactedPreview: string;
   disclaimer: string;
+  photoCredits?: PhotoCredit[];
 }
 
 export interface PaletteColor {
@@ -122,6 +142,56 @@ export interface Telemetry {
   promptAfter: string;
 }
 
+
+export interface SiteRoom {
+  name: string;
+  lede: string;
+  photoId: string;
+}
+
+export interface SiteExperience {
+  title: string;
+  body: string;
+  photoId?: string;
+}
+
+export interface SiteGalleryItem {
+  photoId: string;
+  caption: string;
+}
+
+export interface SiteNavLink {
+  label: string;
+  href: string;
+}
+
+export interface SiteCopy {
+  kicker: string;
+  headline: string;
+  lede: string;
+  ctaLabel: string;
+  aboutTitle: string;
+  aboutBody: string;
+  roomsTitle: string;
+  rooms: SiteRoom[];
+  experiencesTitle: string;
+  experiences: SiteExperience[];
+  galleryTitle: string;
+  gallery: SiteGalleryItem[];
+  bookingTitle: string;
+  bookingBody: string;
+  bookingCta: string;
+  footerTagline: string;
+  nav?: SiteNavLink[];
+}
+
+export interface GeneratedSite {
+  copy: SiteCopy;
+  photoIds: string[];
+  builtAt: string;
+  telemetry: Telemetry | null;
+}
+
 export interface StudioProject {
   id: string;
   createdAt: string;
@@ -133,6 +203,7 @@ export interface StudioProject {
   rationale: DesignRationaleItem[];
   lastTelemetry: Telemetry | null;
   privacyReceipt: PrivacyReceipt | null;
+  site: GeneratedSite | null;
 }
 
 export interface GeneratedBundle {
@@ -192,6 +263,7 @@ export function newProject(intake: Intake = emptyIntake()): StudioProject {
     rationale: [],
     lastTelemetry: null,
     privacyReceipt: null,
+    site: null,
   };
 }
 

@@ -91,6 +91,28 @@ export function projectToMarkdown(project: StudioProject): string {
     if (row.sample) lines.push(`  Specimen: ${row.sample}`);
   }
 
+
+  if (project.site?.copy) {
+    const copy = project.site.copy;
+    lines.push(
+      "",
+      "## Generated website",
+      "",
+      `Headline: ${copy.headline}`,
+      "",
+      copy.lede,
+      "",
+      "### Rooms",
+      "",
+      ...copy.rooms.map((room) => `- ${room.name}: ${room.lede}`),
+      "",
+      "### Experiences",
+      "",
+      ...copy.experiences.map((item) => `- ${item.title}: ${item.body}`),
+      "",
+    );
+  }
+
   if (lastTelemetry) {
     lines.push(
       "",

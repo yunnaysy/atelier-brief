@@ -15,6 +15,7 @@ function normalize(project: StudioProject): StudioProject {
     rationale: Array.isArray(project.rationale) ? project.rationale : [],
     lastTelemetry: project.lastTelemetry ?? null,
     privacyReceipt: project.privacyReceipt ?? null,
+    site: project.site ?? null,
   };
 }
 

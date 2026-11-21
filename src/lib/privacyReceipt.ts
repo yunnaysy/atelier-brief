@@ -1,4 +1,4 @@
-import type { PrivacyReceipt, Telemetry } from "./types";
+import type { PhotoCredit, PrivacyReceipt, Telemetry } from "./types";
 
 export const PRIVACY_DISCLAIMER =
   "Privacy Shield redacts configured confidential fields and detected emails or phone numbers before any cloud transmission. It does not guarantee full anonymization of arbitrary free-text context. Projects are stored in this browser (IndexedDB / localStorage); that storage is local, not end-to-end encrypted.";
@@ -8,7 +8,11 @@ export function makeSessionId(): string {
   return `AB-${n}`;
 }
 
-export function receiptFromTelemetry(telemetry: Telemetry, sessionId = makeSessionId()): PrivacyReceipt {
+export function receiptFromTelemetry(
+  telemetry: Telemetry,
+  sessionId = makeSessionId(),
+  photoCredits?: PhotoCredit[],
+): PrivacyReceipt {
   return {
     sessionId,
     createdAt: new Date().toISOString(),
@@ -21,6 +25,7 @@ export function receiptFromTelemetry(telemetry: Telemetry, sessionId = makeSessi
     localRestoration: telemetry.badge === "cloud" && telemetry.redactionCount > 0,
     redactedPreview: telemetry.promptAfter,
     disclaimer: PRIVACY_DISCLAIMER,
+    photoCredits: photoCredits?.length ? photoCredits : undefined,
   };
 }
 
@@ -33,6 +38,17 @@ export function receiptToMarkdown(receipt: PrivacyReceipt, projectName: string):
         : receipt.badge === "error-fallback"
           ? "Local Fallback"
           : "Studio Preview";
+  const credits = receipt.photoCredits?.length
+    ? [
+        "## Reference photograph credits",
+        "",
+        ...receipt.photoCredits.map(
+          (photo) =>
+            `- ${photo.alt} — ${photo.photographer} (${photo.photographerUrl}), ${photo.source}: ${photo.sourceUrl}, ${photo.license} (${photo.licenseUrl}). ${photo.subjectNote}`,
+        ),
+        "",
+      ]
+    : [];
   return [
     "# Atelier Brief — Privacy Receipt",
     "",
@@ -52,6 +68,7 @@ export function receiptToMarkdown(receipt: PrivacyReceipt, projectName: string):
     receipt.redactedPreview || "—",
     "```",
     "",
+    ...credits,
     "## Scope",
     "",
     receipt.disclaimer,

@@ -13,14 +13,20 @@ import {
   type GenerativeModel,
 } from "firebase/ai";
 import { composeLocalBrief, composeLocalSection } from "./localStudio";
-import { buildFullBriefCloudPrompt, buildSectionCloudPrompt, schemaInstructions } from "./cloudPrompt";
+import { buildFullBriefCloudPrompt, buildSectionCloudPrompt, buildRedactedWebsitePrompt, schemaInstructions, websiteSchemaInstructions } from "./cloudPrompt";
 import { formatIntakeBlock, payloadPreview, planPrivacyShield, polishBundle, restoreValue } from "./privacyShield";
+import { REFERENCE_PHOTOS } from "./referencePhotos";
+import { composeLocalWebsite, scrubSiteCopy, validateSiteCopy } from "./siteCopy";
 import type {
+  ArtDirection,
   BriefSection,
   GeneratedBundle,
+  GeneratedSite,
   InferenceBadge,
   Intake,
   NanoAvailability,
+  SitemapPage,
+  SiteCopy,
   Telemetry,
 } from "./types";
 import { labelForBadge, validateBundle } from "./validateBundle";
@@ -530,6 +536,273 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
       `${diagnostics.join(" ")} Showing the deterministic local studio instead.`,
       config.cloudModel,
       localPayload(options),
+      {
+        schemaValid: false,
+        schemaErrors: diagnostics,
+        success: false,
+        errorMessage: message,
+      },
+    );
+  }
+}
+
+
+export interface WebsiteGenerateOptions {
+  intake: Intake;
+  sections: BriefSection[];
+  sitemap: SitemapPage[];
+  artDirection: ArtDirection;
+  privacyShield: boolean;
+  cloudFallbackConsent?: boolean;
+  onDeviceProgress?: (percent: number) => void;
+}
+
+export interface WebsiteGenerateResult {
+  site: GeneratedSite;
+  telemetry: Telemetry;
+}
+
+export { buildRedactedWebsitePrompt } from "./cloudPrompt";
+
+function localWebsite(options: WebsiteGenerateOptions): GeneratedSite {
+  const copy = composeLocalWebsite({
+    intake: options.intake,
+    sections: options.sections,
+    sitemap: options.sitemap,
+    artDirection: options.artDirection,
+  });
+  return {
+    copy,
+    photoIds: [
+      "hero",
+      ...copy.rooms.map((room) => room.photoId),
+      ...copy.experiences.map((item) => item.photoId ?? ""),
+      ...copy.gallery.map((item) => item.photoId),
+    ].filter(Boolean),
+    builtAt: new Date().toISOString(),
+    telemetry: null,
+  };
+}
+
+function acceptWebsiteCopy(raw: unknown, plan: ReturnType<typeof planPrivacyShield>, intake: Intake): {
+  ok: boolean;
+  copy?: SiteCopy;
+  errors: string[];
+} {
+  const restored = restoreValue(raw, plan);
+  const checked = validateSiteCopy(restored);
+  if (!checked.ok || !checked.copy) return { ok: false, errors: checked.errors };
+  const copy = scrubSiteCopy(checked.copy, intake);
+  const again = validateSiteCopy(copy);
+  if (!again.ok || !again.copy) return { ok: false, errors: again.errors };
+  return { ok: true, copy: again.copy, errors: [] };
+}
+
+export async function generateWebsiteWork(options: WebsiteGenerateOptions): Promise<WebsiteGenerateResult> {
+  const started = performance.now();
+  const nano = await detectNanoAvailability();
+  const config = readFirebaseConfig();
+  const configured = isFirebaseConfigured(config);
+  const plan = planPrivacyShield(options.intake);
+  const preview = payloadPreview(options.intake, plan);
+  const redactionCount = plan.fields.length;
+  const sentCloudPrompt = buildRedactedWebsitePrompt(
+    options.intake,
+    options.sections,
+    options.sitemap,
+    options.artDirection,
+    plan,
+  );
+  const diagnostics: string[] = [];
+  let cloudAttempted = false;
+  let devicePrepared = false;
+  let deviceProgress: number | null = null;
+  let lastSource: "on_device" | "in_cloud" | null = null;
+  let lastModel = configured ? config.cloudModel : "local-studio";
+
+  const pack = (copy: SiteCopy, telemetry: Telemetry): GeneratedSite => ({
+    copy,
+    photoIds: [
+      "hero",
+      ...copy.rooms.map((room) => room.photoId),
+      ...copy.experiences.map((item) => item.photoId ?? ""),
+      ...copy.gallery.map((item) => item.photoId),
+    ].filter(Boolean),
+    builtAt: new Date().toISOString(),
+    telemetry,
+  });
+
+  const finish = (
+    badge: InferenceBadge,
+    reason: string,
+    model: string,
+    copy: SiteCopy,
+    extras: { schemaValid: boolean; schemaErrors: string[]; success: boolean; errorMessage: string | null },
+  ): WebsiteGenerateResult => {
+    const telemetry: Telemetry = {
+      badge,
+      label: labelForBadge(badge),
+      reason,
+      latencyMs: Math.round(performance.now() - started),
+      redactionCount: badge === "on-device" ? 0 : redactionCount,
+      tokens: plan.fields.map((field) => field.token),
+      nano,
+      model,
+      privacyShield: options.privacyShield,
+      inferenceSource: lastSource,
+      cloudAttempted,
+      devicePrepared,
+      deviceProgress,
+      schemaValid: extras.schemaValid,
+      schemaErrors: extras.schemaErrors,
+      success: extras.success,
+      errorMessage: extras.errorMessage,
+      promptBefore: preview.before,
+      promptAfter: sentCloudPrompt,
+    };
+    const site = pack(copy, telemetry);
+    return { site, telemetry };
+  };
+
+  const localCopy = localWebsite(options).copy;
+
+  if (!configured) {
+    return finish(
+      "preview",
+      "No Firebase web config is present, so the studio composed this website with a deterministic, non-AI preview. Connect a Spark project to enable Firebase AI Logic hybrid inference.",
+      "local-studio",
+      localCopy,
+      { schemaValid: true, schemaErrors: [], success: true, errorMessage: null },
+    );
+  }
+
+  const current = initializeFirebaseAi(config);
+  if (!current) {
+    return finish(
+      "error-fallback",
+      `Firebase AI Logic failed to initialize (${initError ?? "unknown error"}). Showing the deterministic local website instead.`,
+      "local-studio",
+      localCopy,
+      { schemaValid: false, schemaErrors: [], success: false, errorMessage: initError },
+    );
+  }
+
+  const devicePrompt = [
+    "Write published website copy for a multi-section marketing site. Return only the JSON described below.",
+    websiteSchemaInstructions(),
+    "",
+    "Intake (this request stays on the device; real client values may be present):",
+    formatIntakeBlock(options.intake),
+    "",
+    "Brief sections:",
+    options.sections.map((section) => `### ${section.title}\n${section.body}`).join("\n\n") || "(none)",
+    "",
+    "Bundled reference photo ids:",
+    REFERENCE_PHOTOS.map((photo) => `${photo.id} (${photo.role})`).join(", "),
+  ].join("\n");
+
+  if (nano !== "unavailable") {
+    try {
+      if (!current.prepared) {
+        await current.modelOnDevice.initializeDeviceModel((value) => {
+          current.deviceProgress = Math.round(value * 10000) / 100;
+          deviceProgress = current.deviceProgress;
+          options.onDeviceProgress?.(current.deviceProgress);
+        });
+        current.prepared = true;
+      }
+      devicePrepared = current.prepared;
+      deviceProgress = current.deviceProgress;
+      lastModel = "gemini-nano";
+      const result = await runModel(current.modelOnDevice, devicePrompt);
+      lastSource = result.source;
+      if (result.source === "on_device") {
+        const parsed = extractJson(result.text);
+        const accepted = acceptWebsiteCopy(parsed, plan, options.intake);
+        if (accepted.ok && accepted.copy) {
+          return finish(
+            "on-device",
+            "This website was composed on-device with Gemini Nano. Client values did not leave this computer. Tokens were not required for the on-device path.",
+            "gemini-nano",
+            accepted.copy,
+            { schemaValid: true, schemaErrors: [], success: true, errorMessage: null },
+          );
+        }
+        diagnostics.push(`On-device website output failed schema validation: ${accepted.errors.join(" ")}`);
+      } else {
+        diagnostics.push(
+          `ONLY_ON_DEVICE returned inferenceSource=${result.source ?? "unknown"}, which cannot be badged as on-device.`,
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "On-device inference failed.";
+      diagnostics.push(`On-device inference failed: ${message}`);
+      devicePrepared = current.prepared;
+      deviceProgress = current.deviceProgress;
+    }
+  } else {
+    diagnostics.push("Chrome Built-in AI (Gemini Nano) is unavailable in this browser.");
+  }
+
+  const confidentialPresent = plan.fields.length > 0;
+  if (confidentialPresent && !options.cloudFallbackConsent) {
+    return finish(
+      "error-fallback",
+      `${diagnostics.join(" ")} Cloud fallback was not approved. Confidential intake fields are present, so the studio did not send a website request to Firebase AI Logic. Approve redacted cloud fallback to continue, or keep composing on this device.`.trim(),
+      lastModel,
+      localCopy,
+      {
+        schemaValid: false,
+        schemaErrors: diagnostics,
+        success: false,
+        errorMessage: "Cloud fallback was not approved while confidential fields were present.",
+      },
+    );
+  }
+
+  cloudAttempted = true;
+  lastModel = config.cloudModel;
+  try {
+    const result = await runCloudModel(current.modelCloud, sentCloudPrompt);
+    lastSource = result.source;
+    if (result.source !== "in_cloud") {
+      throw new Error(
+        `ONLY_IN_CLOUD returned inferenceSource=${result.source ?? "unknown"}, which cannot be badged as cloud inference.`,
+      );
+    }
+    const parsed = extractJson(result.text);
+    const accepted = acceptWebsiteCopy(parsed, plan, options.intake);
+    if (!accepted.ok || !accepted.copy) {
+      return finish(
+        "error-fallback",
+        `The Firebase AI Logic website response failed strict schema validation (${accepted.errors.join(" ")}). The studio did not label incomplete model JSON as a successful AI site.`,
+        config.cloudModel,
+        localCopy,
+        {
+          schemaValid: false,
+          schemaErrors: accepted.errors,
+          success: false,
+          errorMessage: accepted.errors.join(" "),
+        },
+      );
+    }
+    return finish(
+      "cloud",
+      confidentialPresent
+        ? "Gemini Nano was unavailable or returned invalid website copy, so Firebase AI Logic composed this site in the cloud. Privacy Shield replaced configured confidential fields and detected emails/phones with reversible tokens before transmission; this is not a guarantee of full anonymization of arbitrary free-text context. Tokens were restored on the device before render. The public site copy is also scrubbed of budget and confidential notes."
+        : "Gemini Nano was unavailable or returned invalid website copy, so Firebase AI Logic composed this site in the cloud.",
+      config.cloudModel,
+      accepted.copy,
+      { schemaValid: true, schemaErrors: [], success: true, errorMessage: null },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Cloud inference failed.";
+    diagnostics.push(`Cloud inference failed: ${message}`);
+    return finish(
+      "error-fallback",
+      `${diagnostics.join(" ")} Showing the deterministic local website instead.`,
+      config.cloudModel,
+      localCopy,
       {
         schemaValid: false,
         schemaErrors: diagnostics,
