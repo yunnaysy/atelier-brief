@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { downloadReceipt } from "../lib/privacyReceipt";
 import type { PrivacyReceipt, Telemetry } from "../lib/types";
 import { humanBadgeLabel } from "../lib/validateBundle";
@@ -35,9 +35,30 @@ export function PrivacyDrawer({
   onClose: () => void;
 }) {
   const [pane, setPane] = useState<"receipt" | "inspector">("receipt");
+  const [deviceOpen, setDeviceOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setPane("receipt");
+      setDeviceOpen(false);
+    }
+  }, [open]);
+
   if (!open) return null;
 
   const source = humanBadgeLabel(telemetry?.badge ?? receipt?.badge ?? "preview");
+
+  const originalAccordion = telemetry?.promptBefore ? (
+    <details
+      className="device-original"
+      data-testid="device-original"
+      open={deviceOpen}
+      onToggle={(event) => setDeviceOpen((event.target as HTMLDetailsElement).open)}
+    >
+      <summary>Original on-device values (not sent to the API)</summary>
+      {deviceOpen ? <pre data-testid="privacy-before">{telemetry.promptBefore}</pre> : null}
+    </details>
+  ) : null;
 
   return (
     <div className="drawer-backdrop" data-testid="privacy-drawer" onClick={onClose}>
@@ -95,6 +116,7 @@ export function PrivacyDrawer({
                       <pre data-testid="privacy-after-receipt">{telemetry.promptAfter}</pre>
                     </div>
                   ) : null}
+                  {originalAccordion}
                   <button
                     type="button"
                     className="btn-primary"
@@ -157,10 +179,7 @@ export function PrivacyDrawer({
                       </figcaption>
                       <pre data-testid="privacy-after">{telemetry.promptAfter || "—"}</pre>
                     </figure>
-                    <details className="device-original">
-                      <summary>On-device original (not sent to the API)</summary>
-                      <pre data-testid="privacy-before">{telemetry.promptBefore || "—"}</pre>
-                    </details>
+                    {originalAccordion}
                   </div>
                 </>
               ) : (

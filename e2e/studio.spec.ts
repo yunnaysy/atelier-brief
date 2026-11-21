@@ -96,6 +96,11 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("privacy-after-receipt")).not.toContainText('Maison "JJ" Aster');
   await expect(page.getByTestId("privacy-after-receipt")).not.toContainText("€42,000");
   await expect(page.getByTestId("privacy-after-receipt")).not.toContainText("jane.jj.aster@asterhotel.example");
+  await expect(page.getByTestId("device-original")).toBeVisible();
+  await expect(page.getByTestId("device-original")).not.toHaveAttribute("open");
+  await expect(page.getByTestId("privacy-before")).toHaveCount(0);
+  await expect(page.getByTestId("privacy-receipt")).not.toContainText('Maison "JJ" Aster');
+  await expect(page.getByTestId("privacy-receipt")).not.toContainText("€42,000");
   await page.screenshot({
     path: path.join(shots, "v3_1_privacy_receipt.png"),
     scale: "device",
@@ -112,7 +117,9 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("privacy-after")).not.toContainText("€42,000");
   await expect(page.getByTestId("privacy-after")).not.toContainText("jane.jj.aster@asterhotel.example");
   // On-device original is collapsed so the default view only shows tokens.
-  await expect(page.getByTestId("privacy-before")).toBeHidden();
+  await expect(page.getByTestId("device-original")).toBeVisible();
+  await expect(page.getByTestId("device-original")).not.toHaveAttribute("open");
+  await expect(page.getByTestId("privacy-before")).toHaveCount(0);
   await page.screenshot({
     path: path.join(shots, "v3_1_inspector.png"),
     scale: "device",

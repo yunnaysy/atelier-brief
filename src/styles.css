@@ -1780,3 +1780,11 @@ body { background: var(--at-paper); color: #1C1917; }
   .regen-full { display: none; }
   .regen-short { display: inline; }
 }
+
+
+/* Keep the canvas painted so a brief compose swap cannot flash a blank white hole. */
+.canvas { background: var(--at-canvas); }
+.compose-skeleton {
+  min-height: 22rem;
+  background: var(--at-canvas);
+}

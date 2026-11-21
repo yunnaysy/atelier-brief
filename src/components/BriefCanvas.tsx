@@ -10,32 +10,19 @@ interface Props {
   onRegenerate: (id: string) => void;
 }
 
-function ComposeSkeleton({ intake }: { intake: Intake }) {
+function SkeletonBody() {
   return (
-    <article className="canvas" data-testid="brief-canvas" aria-busy="true">
-      <header className="doc-head">
-        <div>
-          <p className="label">Website brief</p>
-          <h2>{intake.projectName || "Composing brief"}</h2>
-          <div className="meta">
-            {intake.clientName || "No client yet"}
-            {intake.industry ? ` · ${intake.industry}` : ""}
-            {intake.timeline ? ` · ${intake.timeline}` : ""}
-          </div>
+    <div className="compose-skeleton" data-testid="compose-skeleton" role="status" aria-live="polite">
+      <p className="skeleton-status">Composing the brief…</p>
+      {Array.from({ length: 5 }, (_, index) => (
+        <div className="skeleton-block" key={index}>
+          <div className="skeleton-line skeleton-title" />
+          <div className="skeleton-line skeleton-w96" />
+          <div className="skeleton-line skeleton-w88" />
+          <div className="skeleton-line skeleton-w72" />
         </div>
-      </header>
-      <div className="compose-skeleton" data-testid="compose-skeleton" role="status" aria-live="polite">
-        <p className="skeleton-status">Composing the brief…</p>
-        {Array.from({ length: 5 }, (_, index) => (
-          <div className="skeleton-block" key={index}>
-            <div className="skeleton-line skeleton-title" />
-            <div className="skeleton-line skeleton-w96" />
-            <div className="skeleton-line skeleton-w88" />
-            <div className="skeleton-line skeleton-w72" />
-          </div>
-        ))}
-      </div>
-    </article>
+      ))}
+    </div>
   );
 }
 
@@ -48,11 +35,9 @@ export function BriefCanvas({
   onEdit,
   onRegenerate,
 }: Props) {
-  if (busy && !busySection) {
-    return <ComposeSkeleton intake={intake} />;
-  }
+  const showSkeleton = busy && !busySection;
 
-  if (!sections.length) {
+  if (!sections.length && !showSkeleton) {
     return (
       <div className="canvas doc-empty" data-testid="brief-canvas">
         <p className="label">Brief canvas</p>
@@ -67,11 +52,11 @@ export function BriefCanvas({
   }
 
   return (
-    <article className="canvas" data-testid="brief-canvas">
+    <article className="canvas" data-testid="brief-canvas" aria-busy={showSkeleton}>
       <header className="doc-head">
         <div>
           <p className="label">Website brief</p>
-          <h2>{intake.projectName || "Untitled brief"}</h2>
+          <h2>{intake.projectName || (showSkeleton ? "Composing brief" : "Untitled brief")}</h2>
           <div className="meta">
             {intake.clientName || "No client yet"}
             {intake.industry ? ` · ${intake.industry}` : ""}
@@ -79,6 +64,9 @@ export function BriefCanvas({
           </div>
         </div>
       </header>
+      {showSkeleton ? <SkeletonBody /> : null}
+      {showSkeleton ? null : (
+        <>
 
       {sections.map((section, index) => (
         <section className="section" key={section.id} data-section={section.id}>
@@ -151,6 +139,8 @@ export function BriefCanvas({
           </ol>
         </section>
       ) : null}
+        </>
+      )}
     </article>
   );
 }
