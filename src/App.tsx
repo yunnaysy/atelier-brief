@@ -319,7 +319,7 @@ export default function App() {
         <div className="status-strip" data-testid="status-strip" data-kind={badge}>
           <p>
             <span className="status-dot" aria-hidden="true" />
-            <span>{statusStripCopy(badge, planCount, isConsentPending(project.lastTelemetry?.errorMessage, project.lastTelemetry?.cloudAttempted))}</span>
+            <span>{statusStripCopy(badge, planCount, isConsentPending(project.lastTelemetry?.errorMessage, project.lastTelemetry?.cloudAttempted), cloudConsent)}</span>
           </p>
           <button type="button" className="text-btn" data-testid="privacy-pill" onClick={() => setPrivacyOpen(true)}>
             View details

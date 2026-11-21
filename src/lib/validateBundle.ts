@@ -212,6 +212,7 @@ export function statusStripCopy(
   badge: "on-device" | "cloud" | "error-fallback" | "preview" | "idle",
   fieldCount: number,
   consentPending = false,
+  consentGrantedNow = false,
 ): string {
   const n = Math.max(0, fieldCount);
   const fields = `${n} confidential field${n === 1 ? "" : "s"}`;
@@ -221,6 +222,9 @@ export function statusStripCopy(
     case "cloud":
       return `Cloud hybrid · ${n} field${n === 1 ? "" : "s"} redacted before send`;
     case "error-fallback":
+      if (consentPending && consentGrantedNow) {
+        return "Local draft · Redacted cloud sharing approved for the next generation";
+      }
       return consentPending
         ? "Local draft · Cloud AI off until you approve redacted sharing"
         : "Local draft · Cloud AI unavailable, composed on this device";

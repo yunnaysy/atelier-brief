@@ -82,4 +82,8 @@ test("no-consent status copy is calm, not an error", () => {
   assert.equal(pending, "Local draft · Cloud AI off until you approve redacted sharing");
   assert.ok(!/fail/i.test(pending));
   assert.ok(!/fail/i.test(statusStripCopy("error-fallback", 11, false)));
+  assert.equal(
+    statusStripCopy("error-fallback", 11, true, true),
+    "Local draft · Redacted cloud sharing approved for the next generation",
+  );
 });
