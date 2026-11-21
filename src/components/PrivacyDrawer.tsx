@@ -93,7 +93,11 @@ export function PrivacyDrawer({
       open={deviceOpen}
       onToggle={(event) => setDeviceOpen((event.target as HTMLDetailsElement).open)}
     >
-      <summary>Restored on device (never sent)</summary>
+      <summary data-testid="device-original-summary">
+        <span className="device-original-chev" aria-hidden="true">›</span>
+        <span className="device-original-title">Restored on device (never sent)</span>
+        <span className="device-original-hint">{deviceOpen ? "Hide" : "Collapsed · show original"}</span>
+      </summary>
       {deviceOpen ? <pre data-testid="privacy-before">{telemetry.promptBefore}</pre> : null}
     </details>
   ) : null;
@@ -121,17 +125,17 @@ export function PrivacyDrawer({
         <div className="drawer-body">
           {pane === "receipt" ? (
             <div data-testid="privacy-receipt">
+              <aside className="architecture-card" data-testid="hybrid-architecture">
+                <p className="label">How this brief is composed</p>
+                <ol>
+                  <li data-testid="arch-tokens">On this device, Privacy Shield replaces configured confidential fields and detected emails or phones with reversible tokens.</li>
+                  <li>If Chrome 139+ has Gemini Nano available, the brief can be composed on-device with the original values. That path is only claimed when the receipt badges it as on-device.</li>
+                  <li>Otherwise, with your consent, only the tokenized payload is sent to Firebase AI Logic in the cloud (Gemini 3.5 Flash-Lite on the Spark free tier). Tokens are restored locally after the response.</li>
+                  <li data-testid="arch-appcheck">App Check may be configured on this project. Enforcement is off, so App Check tokens are not claimed as verified.</li>
+                </ol>
+              </aside>
               {receipt ? (
                 <>
-                  <aside className="architecture-card" data-testid="hybrid-architecture">
-                    <p className="label">How this brief is composed</p>
-                    <ol>
-                      <li>On this device, Privacy Shield replaces configured confidential fields and detected emails or phones with reversible tokens.</li>
-                      <li>If Chrome 139+ has Gemini Nano available, the brief can be composed on-device with the original values. That path is only claimed when the receipt badges it as on-device.</li>
-                      <li>Otherwise, with your consent, only the tokenized payload is sent to Firebase AI Logic in the cloud (Gemini 3.5 Flash-Lite on the Spark free tier). Tokens are restored locally after the response.</li>
-                      <li>App Check may be configured on this project. Enforcement is off, so App Check tokens are not claimed as verified.</li>
-                    </ol>
-                  </aside>
                   <dl className="inspector-grid">
                     <div><dt>Session</dt><dd>{receipt.sessionId}</dd></div>
                     <div><dt>Inference source</dt><dd data-testid="inspector-source">{source}</dd></div>
@@ -144,7 +148,7 @@ export function PrivacyDrawer({
                     <PayloadBlock prompt={telemetry.promptAfter} sent={telemetry.cloudAttempted} testId="privacy-after-receipt" />
                   ) : null}
                   {originalAccordion}
-                  <p className="reason">{receipt.disclaimer}</p>
+                  <p className="reason receipt-scope" data-testid="receipt-scope"><span className="label">Scope</span>{receipt.disclaimer}</p>
                   {receipt.tokens.length ? (
                     <p className="reason">Placeholders: {receipt.tokens.join(", ")}</p>
                   ) : null}

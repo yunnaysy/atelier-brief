@@ -51,6 +51,12 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("bottom-nav")).toBeHidden();
   await expect(page.getByTestId("header-export")).toHaveCount(0);
   await expect(page.getByTestId("judge-demo")).toBeVisible();
+  // Before any brief, the receipt already explains tokenization and App Check status (no invented receipt).
+  await page.getByTestId("privacy-pill").click();
+  await expect(page.getByTestId("arch-tokens")).toContainText("reversible tokens");
+  await expect(page.getByTestId("arch-appcheck")).toContainText("Enforcement is off");
+  await expect(page.getByTestId("privacy-sent-payload")).toHaveCount(0);
+  await page.getByTestId("privacy-drawer").getByRole("button", { name: "Close" }).click();
 
   await loadDemo(page);
   await expect(page.getByTestId("brief-canvas")).toBeVisible();
@@ -98,6 +104,15 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("privacy-after-receipt")).not.toContainText("jane.jj.aster@asterhotel.example");
   await expect(page.getByTestId("device-original")).toBeVisible();
   await expect(page.getByTestId("device-original")).not.toHaveAttribute("open");
+  await expect(page.getByTestId("privacy-before")).toHaveCount(0);
+  // Collapsed means only the one-line summary row is rendered, and the disclaimer below is a separate "Scope" block.
+  await expect(page.getByTestId("device-original-summary")).toContainText("Collapsed · show original");
+  const collapsedBox = await page.getByTestId("device-original").boundingBox();
+  expect(collapsedBox && collapsedBox.height).toBeLessThan(56);
+  await expect(page.getByTestId("receipt-scope")).toContainText("Scope");
+  await page.getByTestId("device-original-summary").click();
+  await expect(page.getByTestId("privacy-before")).toHaveCount(1);
+  await page.getByTestId("device-original-summary").click();
   await expect(page.getByTestId("privacy-before")).toHaveCount(0);
   await expect(page.getByTestId("privacy-receipt")).not.toContainText('Maison "JJ" Aster');
   await expect(page.getByTestId("privacy-receipt")).not.toContainText("€42,000");

@@ -141,6 +141,10 @@ test("renderer uses the brief palette, credits reference photos, and ships an ho
   assert.ok(html.includes("Your enquiry has been prepared"));
   assert.equal(/reservation (was )?confirmed|booking confirmed|has been received/i.test(html), false);
   assert.ok(html.includes("data-menu-toggle"));
+  // Mobile hero copy sits on a frosted panel so photo edges never strike through the heading.
+  const mobileCss = html.slice(html.indexOf("@media (max-width:860px)"));
+  assert.match(mobileCss, /\.hero-copy\{[^}]*backdrop-filter:blur\(18px\)[^}]*\}/);
+  assert.match(mobileCss, /\.hero-copy\{[^}]*background:rgba\(12,10,8,0\.42\)/);
   assert.ok(html.includes("/references/hero.jpg"));
   assert.ok(html.includes("/references/garden.jpg"));
   assert.ok(html.includes("/references/water.jpg"));

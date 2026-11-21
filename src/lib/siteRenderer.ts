@@ -216,6 +216,8 @@ a:hover{color:var(--accent)}
   .hero-copy{padding-bottom:3rem}
   .hero{min-height:88vh}
   .hero h1{font-size:clamp(3rem, 12vw, 3.6rem)}
+  .hero-copy{margin:0 0.75rem 1.25rem;padding:1.5rem 1.25rem 1.6rem;border-radius:24px;background:rgba(12,10,8,0.42);-webkit-backdrop-filter:blur(18px) saturate(1.05);backdrop-filter:blur(18px) saturate(1.05);border:1px solid rgba(255,255,255,0.14)}
+  .hero-copy .kicker{margin-bottom:0.9rem}
 }
 `;
 

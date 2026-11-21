@@ -1766,14 +1766,33 @@ body { background: var(--at-paper); color: #1C1917; }
 }
 .device-original {
   margin: 0.9rem 0 0;
+  border: 1px solid var(--at-border);
+  border-radius: 999px;
+  background: #FFFFFF;
 }
+.device-original[open] { border-radius: var(--radius-input); padding-bottom: 0.6rem; }
 .device-original summary {
   cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1rem;
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--at-muted);
+  color: var(--at-ink);
 }
-.device-original pre { margin-top: 0.55rem; }
+.device-original summary::-webkit-details-marker { display: none; }
+.device-original-chev { display: inline-block; font-size: 1rem; line-height: 1; transition: transform 160ms ease; }
+.device-original[open] .device-original-chev { transform: rotate(90deg); }
+.device-original-hint { margin-left: auto; font-weight: 500; font-size: 0.74rem; color: var(--at-muted); }
+.device-original[open] pre { margin: 0.2rem 0.6rem 0; }
+.receipt-scope {
+  margin-top: 1.6rem !important;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--at-border);
+}
+.receipt-scope .label { display: block; margin: 0 0 0.35rem; }
 
 /* Shorter regen label kicks in before the button would clip */
 @media (max-width: 1100px) {
@@ -1910,3 +1929,5 @@ body { background: var(--at-paper); color: #1C1917; }
 }
 .device-original summary { color: var(--at-muted); }
 .device-original pre { background: #F5F5F5; border-style: dashed; }
+.architecture-card ol li { border-radius: 10px; padding: 0.15rem 0.4rem; margin-left: -0.4rem; transition: background 160ms ease; }
+.architecture-card ol li:hover { background: #F5F5F5; }
