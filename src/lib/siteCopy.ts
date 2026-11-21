@@ -15,6 +15,7 @@ export const LOREM_RE = /\b(lorem|ipsum|dolor sit|consectetur adipiscing|placeho
 
 const PRIVATE_TOKENS = [
   "[BUDGET]",
+  "[BUDGET_RANGE]",
   "[PROPRIETARY_NOTES]",
   "[CONFIDENTIAL_NOTES]",
   "[CLIENT_EMAIL]",

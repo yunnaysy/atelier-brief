@@ -49,6 +49,40 @@ function applyReplacements(raw: string, pairs: { from: string; to: string }[]): 
   return next;
 }
 
+const DOUBLE_QUOTES = `["\u201C\u201D\u201E\u00AB\u00BB]`;
+const SINGLE_QUOTES = `['\u2018\u2019\u201A]`;
+
+/**
+ * A pattern for one configured value that also matches the spellings a model or editor
+ * produces when it echoes the value back: straight vs typographic quotes/apostrophes and
+ * any run of whitespace. A restored brief re-sent to the cloud therefore cannot leak it.
+ */
+export function valuePattern(value: string): RegExp {
+  const parts = value
+    .trim()
+    .split(/\s+/)
+    .map((word) =>
+      [...word]
+        .map((ch) => {
+          if (/["\u201C\u201D\u201E\u00AB\u00BB]/.test(ch)) return DOUBLE_QUOTES;
+          if (/['\u2018\u2019\u201A]/.test(ch)) return SINGLE_QUOTES;
+          return ch.replace(/[.*+?^${}()|[\]\\/-]/g, "\\$&");
+        })
+        .join(""),
+    );
+  return new RegExp(parts.join("\\s+"), "g");
+}
+
+function redactValues(raw: string, pairs: { from: string; to: string }[]): string {
+  let next = raw;
+  const sorted = [...pairs].sort((a, b) => b.from.length - a.from.length);
+  for (const pair of sorted) {
+    if (!pair.from.trim()) continue;
+    next = next.replace(valuePattern(pair.from), () => pair.to);
+  }
+  return next;
+}
+
 export function planPrivacyShield(intake: Intake): ShieldPlan {
   const fields: ShieldField[] = [];
 
@@ -73,7 +107,7 @@ export function planPrivacyShield(intake: Intake): ShieldPlan {
   const redactPairs = fields.map((field) => ({ from: field.value, to: field.token }));
   const restorePairs = fields.map((field) => ({ from: field.token, to: field.value }));
 
-  const redactText = (raw: string) => applyReplacements(raw, redactPairs);
+  const redactText = (raw: string) => redactValues(raw, redactPairs);
   const restoreText = (raw: string) => applyReplacements(raw, restorePairs);
 
   const redactedIntake: Intake = {

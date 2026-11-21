@@ -64,7 +64,9 @@ test("website cloud prompt is tokenized and redacts brief bodies", () => {
   assert.equal(prompt.includes("ops@aster-example.test"), false);
   assert.equal(prompt.includes("+33 1 23 45 67 89"), false);
   assert.ok(prompt.includes("[CLIENT_NAME]") || prompt.includes("[PROJECT_NAME]"));
-  assert.ok(prompt.includes("[BUDGET]"));
+  assert.ok(prompt.includes("Client: [CLIENT_NAME]"));
+  assert.ok(prompt.includes("Budget: [BUDGET_RANGE]"));
+  assert.ok(prompt.includes("Project: [PROJECT_NAME]"));
   assert.ok(/\[PROPRIETARY_NOTES\]|\[CONFIDENTIAL_NOTES\]/.test(prompt));
 });
 

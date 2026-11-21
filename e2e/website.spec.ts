@@ -151,10 +151,27 @@ test("cloud consent sends a tokenized generateContent request", async ({ page })
   await expect(page.getByTestId("site-preview")).toBeVisible({ timeout: 45_000 });
   expect(sawGenerate, "Cloud consent was on, so the studio should have issued a generateContent request.").toBeTruthy();
   expect(leaks, `Raw confidential values in generateContent: ${leaks.join(", ")}`).toEqual([]);
-  expect(body).toMatch(/\[CLIENT_NAME\]|\[PROJECT_NAME\]/);
-  expect(body).toContain("[BUDGET]");
+  const sentText: string = (JSON.parse(body).contents ?? [])
+    .flatMap((item: { parts?: { text?: string }[] }) => item.parts ?? [])
+    .map((part: { text?: string }) => part.text ?? "")
+    .join("\n");
+  expect(sentText).toContain("Project: [PROJECT_NAME]");
+  expect(sentText).toContain("Client: [CLIENT_NAME]");
+  expect(sentText).toContain("Budget: [BUDGET_RANGE]");
+  expect(sentText).not.toContain("The Aster Hotel");
   const frame = page.frameLocator('[data-testid="site-preview"]');
   await expect(frame.locator(".hero h1")).toContainText("The Aster Hotel");
+
+  // The box labelled "Payload sent to cloud" must be exactly the intercepted cloudPrompt.
+  await page.getByTestId("privacy-pill").click();
+  const payload = page.getByTestId("privacy-sent-payload");
+  await expect(payload).toContainText("Payload sent to cloud");
+  await expect(payload).toHaveAttribute("data-sent", "true");
+  const shown = await page.getByTestId("privacy-after-receipt").innerText();
+  expect(shown.trim()).toBe(sentText.trim());
+  await expect(page.getByTestId("device-original")).toContainText("Restored on device (never sent)");
+  await expect(page.getByTestId("device-original")).not.toHaveAttribute("open");
+  await expect(page.getByTestId("privacy-before")).toHaveCount(0);
 });
 
 test("capture generated site screenshots for critique", async ({ page }) => {

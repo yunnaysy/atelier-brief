@@ -25,7 +25,7 @@ export function ArtDirectionSpecimen({ art }: { art: ArtDirection }) {
     ?? "#F7F5F0";
   const ink = art.palette.find((color) => /text|ink|charcoal|espresso/i.test(color.role + color.name))?.hex
     ?? art.palette[1]?.hex
-    ?? "#25241F";
+    ?? "#1C1917";
 
   const flash = async (value: string, label: string) => {
     const ok = await copyText(value);
@@ -110,7 +110,7 @@ export function ArtDirectionSpecimen({ art }: { art: ArtDirection }) {
             View availability
           </span>
         </div>
-        <aside className="component-card" style={{ borderColor: art.palette.find((c) => /rule|secondary/i.test(c.role))?.hex ?? "#C5C1B6" }}>
+        <aside className="component-card" style={{ borderColor: art.palette.find((c) => /rule|secondary/i.test(c.role))?.hex ?? "#D4D4D4" }}>
           <strong style={{ fontFamily: art.displayFamily }}>A considered stay</strong>
           <span>Illustrative specimen for primary action, secondary action, and a hairline card.</span>
         </aside>

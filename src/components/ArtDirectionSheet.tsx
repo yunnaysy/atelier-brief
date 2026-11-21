@@ -4,7 +4,7 @@ import type { ArtDirection } from "../lib/types";
 export function ArtDirectionSheet({ art }: { art: ArtDirection }) {
   const paper = art.palette.find((color) => /field|paper|ivory|cream|vellum|plaster/i.test(color.role + color.name))?.hex
     ?? art.palette[0]?.hex
-    ?? "#F7F4EE";
+    ?? "#FFFFFF";
   const ink = art.palette.find((color) => /text|ink|espresso/i.test(color.role + color.name))?.hex
     ?? art.palette[1]?.hex
     ?? "#181715";

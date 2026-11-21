@@ -145,3 +145,28 @@ test("polishGeneratedText removes doubled articles and common model typos", () =
   assert.equal(bundle.sections[0].title, "Priority page");
   assert.equal(bundle.sections[0].body, "Book under the maison.");
 });
+
+test("typographic-quote and whitespace variants of a confidential value are tokenized too", () => {
+  const plan = planPrivacyShield(intake);
+  const echoed = [
+    "Prepared for Maison \u201CJJ\u201D Aster & Co. this spring.",
+    "Budget  noted: €42,000–€58,000  (design + build).",
+    "Owner\u2019s annex stays private.",
+  ].join("\n");
+  const after = plan.redactText(echoed);
+  assert.equal(after.includes("Aster & Co"), false, after);
+  assert.equal(after.includes("€42,000"), false, after);
+  assert.ok(after.includes("[CLIENT_NAME]"));
+  assert.ok(after.includes("[BUDGET_RANGE]"));
+});
+
+test("the tokenized intake block names every configured field by token, never by value", () => {
+  const plan = planPrivacyShield(intake);
+  const block = formatIntakeBlock(plan.redactedIntake);
+  assert.match(block, /^Project: \[PROJECT_NAME\]$/m);
+  assert.match(block, /^Client: \[CLIENT_NAME\]$/m);
+  assert.match(block, /^Budget: \[BUDGET_RANGE\]$/m);
+  assert.match(block, /^Confidential notes: \[PROPRIETARY_NOTES\]$/m);
+  for (const field of plan.fields) assert.equal(block.includes(field.value), false, field.token);
+  assert.equal(/The Aster Hotel|Maison|€|rate card: \$/i.test(block), false);
+});

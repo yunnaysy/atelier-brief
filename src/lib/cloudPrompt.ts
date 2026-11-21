@@ -109,7 +109,7 @@ export function websiteSchemaInstructions(): string {
   ]
 }
 Rules:
-- This copy will be published on a public marketing website. Never include budget figures, confidential notes, private contact details, or Privacy Shield tokens such as [BUDGET] or [PROPRIETARY_NOTES].
+- This copy will be published on a public marketing website. Never include budget figures, confidential notes, private contact details, or Privacy Shield tokens such as [BUDGET_RANGE] or [PROPRIETARY_NOTES].
 - You may use the project or client name tokens naturally when they appear in the intake; they will be restored on the device.
 - English only. No lorem ipsum, no placeholder text, no exclamation-heavy sales copy, no generic startup voice.
 - Write like a small editorial house journal: concrete, calm, specific.

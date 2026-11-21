@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { downloadReceipt } from "../lib/privacyReceipt";
 import type { PhotoCredit, PrivacyReceipt, Telemetry } from "../lib/types";
 import { humanBadgeLabel } from "../lib/validateBundle";
@@ -19,6 +19,44 @@ function nanoLabel(value: Telemetry["nano"] | undefined, source?: string | null)
     default:
       return "Unknown";
   }
+}
+
+
+const TOKEN_RE = /(\[[A-Z][A-Z0-9_]*\])/g;
+
+/** Renders the exact cloudPrompt string; tokens are only highlighted, never rewritten. */
+function PayloadBlock({ prompt, sent, testId }: { prompt: string; sent: boolean; testId: string }) {
+  const preRef = useRef<HTMLPreElement>(null);
+  useEffect(() => {
+    const pre = preRef.current;
+    const anchor = pre?.querySelector<HTMLElement>("[data-intake-anchor]");
+    if (pre && anchor) pre.scrollTop = Math.max(0, anchor.offsetTop - pre.offsetTop - 8);
+  }, [prompt]);
+  const intakeAt = prompt.indexOf("Intake (");
+  const head = intakeAt >= 0 ? prompt.slice(0, intakeAt) : prompt;
+  const tail = intakeAt >= 0 ? prompt.slice(intakeAt) : "";
+  const paint = (text: string, key: string) =>
+    text.split(TOKEN_RE).map((part, index) =>
+      index % 2 === 1 ? (
+        <mark key={`${key}-${index}`} className="payload-token">{part}</mark>
+      ) : (
+        <span key={`${key}-${index}`}>{part}</span>
+      ),
+    );
+  return (
+    <figure className="sent-payload" data-testid="privacy-sent-payload" data-sent={sent ? "true" : "false"}>
+      <figcaption className="payload-head">
+        <span className="label">{sent ? "Payload sent to cloud" : "Payload prepared for cloud (not sent)"}</span>
+        <span className="payload-sub">
+          Exact tokenized cloudPrompt{sent ? " from the request this session made" : ""} · {prompt.length.toLocaleString("en-US")} characters · tokens highlighted
+        </span>
+      </figcaption>
+      <pre ref={preRef} data-testid={testId}>
+        {paint(head, "h")}
+        {tail ? <span data-intake-anchor="">{paint(tail, "t")}</span> : null}
+      </pre>
+    </figure>
+  );
 }
 
 export function PrivacyDrawer({
@@ -55,7 +93,7 @@ export function PrivacyDrawer({
       open={deviceOpen}
       onToggle={(event) => setDeviceOpen((event.target as HTMLDetailsElement).open)}
     >
-      <summary>Original on-device values (not sent to the API)</summary>
+      <summary>Restored on device (never sent)</summary>
       {deviceOpen ? <pre data-testid="privacy-before">{telemetry.promptBefore}</pre> : null}
     </details>
   ) : null;
@@ -102,6 +140,10 @@ export function PrivacyDrawer({
                     <div><dt>Cloud generation</dt><dd>{receipt.cloudGenerationUsed ? "Used" : "Not used"}</dd></div>
                     <div><dt>Local restoration</dt><dd>{receipt.localRestoration ? "Tokens restored on this device" : "Not required"}</dd></div>
                   </dl>
+                  {telemetry?.promptAfter ? (
+                    <PayloadBlock prompt={telemetry.promptAfter} sent={telemetry.cloudAttempted} testId="privacy-after-receipt" />
+                  ) : null}
+                  {originalAccordion}
                   <p className="reason">{receipt.disclaimer}</p>
                   {receipt.tokens.length ? (
                     <p className="reason">Placeholders: {receipt.tokens.join(", ")}</p>
@@ -148,17 +190,6 @@ export function PrivacyDrawer({
                       </ul>
                     </div>
                   ) : null}
-                  {telemetry?.promptAfter ? (
-                    <div className="sent-payload" data-testid="privacy-sent-payload">
-                      <p className="label">
-                        {telemetry.cloudAttempted
-                          ? "Redacted payload sent to API"
-                          : "Redacted payload prepared for API (not sent)"}
-                      </p>
-                      <pre data-testid="privacy-after-receipt">{telemetry.promptAfter}</pre>
-                    </div>
-                  ) : null}
-                  {originalAccordion}
                   <button
                     type="button"
                     className="btn-primary"
@@ -213,14 +244,7 @@ export function PrivacyDrawer({
                         This is not a guarantee of full anonymization of arbitrary free-text context.
                       </p>
                     </div>
-                    <figure className="sent-figure">
-                      <figcaption>
-                        {telemetry.cloudAttempted
-                          ? "Redacted payload sent to API"
-                          : "Redacted payload prepared for API (not sent)"}
-                      </figcaption>
-                      <pre data-testid="privacy-after">{telemetry.promptAfter || "—"}</pre>
-                    </figure>
+                    <PayloadBlock prompt={telemetry.promptAfter || "—"} sent={telemetry.cloudAttempted} testId="privacy-after" />
                     {originalAccordion}
                   </div>
                 </>
