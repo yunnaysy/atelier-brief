@@ -10,6 +10,35 @@ interface Props {
   onRegenerate: (id: string) => void;
 }
 
+function ComposeSkeleton({ intake }: { intake: Intake }) {
+  return (
+    <article className="canvas" data-testid="brief-canvas" aria-busy="true">
+      <header className="doc-head">
+        <div>
+          <p className="label">Website brief</p>
+          <h2>{intake.projectName || "Composing brief"}</h2>
+          <div className="meta">
+            {intake.clientName || "No client yet"}
+            {intake.industry ? ` · ${intake.industry}` : ""}
+            {intake.timeline ? ` · ${intake.timeline}` : ""}
+          </div>
+        </div>
+      </header>
+      <div className="compose-skeleton" data-testid="compose-skeleton" role="status" aria-live="polite">
+        <p className="skeleton-status">Composing the brief…</p>
+        {Array.from({ length: 5 }, (_, index) => (
+          <div className="skeleton-block" key={index}>
+            <div className="skeleton-line skeleton-title" />
+            <div className="skeleton-line skeleton-w96" />
+            <div className="skeleton-line skeleton-w88" />
+            <div className="skeleton-line skeleton-w72" />
+          </div>
+        ))}
+      </div>
+    </article>
+  );
+}
+
 export function BriefCanvas({
   intake,
   sections,
@@ -19,9 +48,13 @@ export function BriefCanvas({
   onEdit,
   onRegenerate,
 }: Props) {
+  if (busy && !busySection) {
+    return <ComposeSkeleton intake={intake} />;
+  }
+
   if (!sections.length) {
     return (
-      <div className="canvas doc-empty">
+      <div className="canvas doc-empty" data-testid="brief-canvas">
         <p className="label">Brief canvas</p>
         <h2>Set the intake, then compose a brief.</h2>
         <p>
@@ -56,7 +89,7 @@ export function BriefCanvas({
             </h3>
             <button
               type="button"
-              className="ghost"
+              className="ghost regen-btn"
               data-testid={`regen-${section.id}`}
               disabled={busy}
               onClick={() => onRegenerate(section.id)}

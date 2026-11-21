@@ -111,19 +111,101 @@ export function restoreBundle<T>(value: T, plan: ShieldPlan): T {
   return restoreValue(value, plan);
 }
 
-export function payloadPreview(intake: Intake, plan: ShieldPlan = planPrivacyShield(intake)): {
-  before: string;
-  after: string;
-} {
-  const before = [
+export function formatIntakeBlock(intake: Intake): string {
+  return [
     `Project: ${intake.projectName}`,
     `Client: ${intake.clientName}`,
     `Industry: ${intake.industry}`,
     `Budget: ${intake.budget}`,
     `Timeline: ${intake.timeline}`,
+    intake.tones.length ? `Tones: ${intake.tones.join(", ")}` : "",
+    `Voice reserve (0 reserved, 100 expressive): ${intake.voiceReserve}`,
     `Core goal: ${intake.coreGoal}`,
     `Audience: ${intake.audience}`,
     `Confidential notes: ${intake.confidentialNotes}`,
-  ].join("\n");
-  return { before, after: plan.redactText(before) };
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+/** Intake snapshot only. Prefer the actual sent cloud prompt stored on telemetry. */
+export function payloadPreview(intake: Intake, plan: ShieldPlan = planPrivacyShield(intake)): {
+  before: string;
+  after: string;
+} {
+  const before = formatIntakeBlock(intake);
+  const after = formatIntakeBlock(plan.redactedIntake);
+  return { before, after };
+}
+
+export const DOUBLED_ARTICLE_HINT =
+  'Write naturally. Do not double articles (avoid phrases like "the The Hotel" or "a A studio"). Spell "Priority" correctly.';
+
+const TYPO_FIXES: Array<[RegExp, string]> = [
+  [/\bPriortiy\b/g, "Priority"],
+  [/\bpriortiy\b/g, "priority"],
+  [/\bRecieve\b/g, "Receive"],
+  [/\brecieve\b/g, "receive"],
+  [/\bSeperate\b/g, "Separate"],
+  [/\bseperate\b/g, "separate"],
+  [/\bOccured\b/g, "Occurred"],
+  [/\boccured\b/g, "occurred"],
+  [/\bDefinately\b/g, "Definitely"],
+  [/\bdefinately\b/g, "definitely"],
+  [/\bAccomodat/g, "Accommodat"],
+  [/\baccomodat/g, "accommodat"],
+];
+
+/** Light typo and doubled-article cleanup for model output. Does not rewrite meaning. */
+export function polishGeneratedText(text: string): string {
+  let out = text;
+  for (const [pattern, replacement] of TYPO_FIXES) {
+    out = out.replace(pattern, replacement);
+  }
+  out = out.replace(/\b([Tt]he)\s+[Tt]he\b/g, "$1");
+  out = out.replace(/\b([Aa]n)\s+[Aa]n\b/g, "$1");
+  out = out.replace(/\b([Aa])\s+[Aa]\b/g, "$1");
+  return out;
+}
+
+function walkPolish(value: unknown): unknown {
+  if (typeof value === "string") return polishGeneratedText(value);
+  if (Array.isArray(value)) return value.map(walkPolish);
+  if (value && typeof value === "object") {
+    const next: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      next[key] = walkPolish(item);
+    }
+    return next;
+  }
+  return value;
+}
+
+export function polishBundle<T>(bundle: T): T {
+  return walkPolish(bundle) as T;
+}
+
+/**
+ * Every configured field value must be absent from `payload`.
+ * A token may be omitted when a longer field already covers that value (e.g. emails inside notes).
+ */
+export function assertPayloadTokenized(
+  payload: string,
+  plan: ShieldPlan,
+): { ok: boolean; leaks: string[]; missingTokens: string[] } {
+  const leaks: string[] = [];
+  const missingTokens: string[] = [];
+  for (const field of plan.fields) {
+    if (field.value && payload.includes(field.value)) leaks.push(field.token);
+    if (!payload.includes(field.token)) {
+      const subsumed = plan.fields.some(
+        (other) =>
+          other.token !== field.token &&
+          other.value.includes(field.value) &&
+          payload.includes(other.token),
+      );
+      if (!subsumed) missingTokens.push(field.token);
+    }
+  }
+  return { ok: leaks.length === 0 && missingTokens.length === 0, leaks, missingTokens };
 }

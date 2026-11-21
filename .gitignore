@@ -34,3 +34,6 @@ serviceAccount*.json
 playwright-report
 test-results
 blob-report
+
+# Firebase CLI cache
+.firebase/

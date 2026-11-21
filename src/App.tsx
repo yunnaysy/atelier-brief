@@ -289,7 +289,7 @@ export default function App() {
           </button>
         </div>
 
-        <main className="workspace-main">
+        <main className="workspace-main" data-testid="workspace-main" data-tab={tab} key={tab}>
           {tab === "brief" ? (
             <BriefCanvas
               intake={project.intake}

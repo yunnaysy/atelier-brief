@@ -13,7 +13,8 @@ import {
   type GenerativeModel,
 } from "firebase/ai";
 import { composeLocalBrief, composeLocalSection } from "./localStudio";
-import { payloadPreview, planPrivacyShield, restoreValue } from "./privacyShield";
+import { buildFullBriefCloudPrompt, buildSectionCloudPrompt, schemaInstructions } from "./cloudPrompt";
+import { formatIntakeBlock, payloadPreview, planPrivacyShield, polishBundle, restoreValue } from "./privacyShield";
 import type {
   BriefSection,
   GeneratedBundle,
@@ -244,57 +245,6 @@ export async function prepareOnDeviceModel(
   current.prepared = true;
 }
 
-function schemaInstructions(): string {
-  return `Return a JSON object with this exact shape:
-{
-  "sections": [
-    { "id": "executive-summary", "title": "Executive Summary", "body": "..." },
-    { "id": "audience-positioning", "title": "Audience & Positioning", "body": "..." },
-    { "id": "conversion-flow", "title": "Core Conversion Flow", "body": "..." },
-    { "id": "tone-voice", "title": "Tone & Voice Guidelines", "body": "..." },
-    { "id": "discovery-questions", "title": "Discovery Questions", "body": "..." },
-    { "id": "deliverables-risks", "title": "Deliverables & Risks", "body": "..." }
-  ],
-  "sitemap": [
-    { "id": "page-1", "name": "Home", "purpose": "...", "sections": ["..."], "heroCopy": "..." }
-  ],
-  "artDirection": {
-    "narrative": "...",
-    "displayFamily": "Fraunces",
-    "bodyFamily": "IBM Plex Sans",
-    "monoFamily": "IBM Plex Mono",
-    "density": "airy" | "balanced" | "compact",
-    "motion": "...",
-    "palette": [{ "name": "...", "hex": "#RRGGBB", "role": "..." }],
-    "hierarchy": [{ "role": "...", "family": "...", "size": "...", "weight": "...", "tracking": "...", "sample": "..." }]
-  },
-  "rationale": [
-    {
-      "recommendation": "...",
-      "reasoning": "...",
-      "businessObjective": "...",
-      "implementation": "..."
-    }
-  ]
-}
-Write 2 short paragraphs per brief section (except Discovery Questions, which should be a numbered list of 5). Provide 5 or 6 sitemap pages with unique ids. Palette must include 5 colors with real #RRGGBB hex values. Provide at least 3 design-decision rationale items, each with recommendation, reasoning, businessObjective, and implementation. English only. No markdown fences.`;
-}
-
-function intakeBlock(intake: Intake): string {
-  return [
-    `Project: ${intake.projectName}`,
-    `Client: ${intake.clientName}`,
-    `Industry: ${intake.industry}`,
-    `Budget: ${intake.budget}`,
-    `Timeline: ${intake.timeline}`,
-    `Tones: ${intake.tones.join(", ")}`,
-    `Voice reserve (0 reserved, 100 expressive): ${intake.voiceReserve}`,
-    `Core goal: ${intake.coreGoal}`,
-    `Audience: ${intake.audience}`,
-    `Confidential notes: ${intake.confidentialNotes}`,
-  ].join("\n");
-}
-
 export function extractJson(text: string): unknown {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -373,6 +323,15 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
   const preview = payloadPreview(options.intake, plan);
   const redactionCount = plan.fields.length;
   const workingIntake = redactionCount > 0 ? plan.redactedIntake : options.intake;
+  const sentCloudPrompt =
+    options.sectionId && options.currentSection
+      ? buildSectionCloudPrompt(
+          workingIntake,
+          options.sectionId,
+          plan.redactText(options.currentSection.title),
+          plan.redactText(options.currentSection.body),
+        )
+      : buildFullBriefCloudPrompt(workingIntake);
   const diagnostics: string[] = [];
   let cloudAttempted = false;
   let devicePrepared = false;
@@ -407,7 +366,7 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
       success: extras.success,
       errorMessage: extras.errorMessage,
       promptBefore: preview.before,
-      promptAfter: preview.after,
+      promptAfter: sentCloudPrompt,
     },
   });
 
@@ -432,23 +391,7 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
     );
   }
 
-  const cloudPrompt = options.sectionId && options.currentSection
-    ? [
-        "Revise a single section of a website brief. Return JSON: { \"sections\": [{ \"id\", \"title\", \"body\" }] } with only that section.",
-        `Section id: ${options.sectionId}`,
-        `Current title: ${options.currentSection.title}`,
-        `Current body:\n${options.currentSection.body}`,
-        "",
-        "Intake (confidential values already replaced with Privacy Shield tokens):",
-        intakeBlock(workingIntake),
-      ].join("\n")
-    : [
-        "Compose a complete website brief for a design studio handoff.",
-        schemaInstructions(),
-        "",
-        "Intake (confidential values already replaced with Privacy Shield tokens):",
-        intakeBlock(workingIntake),
-      ].join("\n");
+  const cloudPrompt = sentCloudPrompt;
 
   const devicePrompt = options.sectionId && options.currentSection
     ? [
@@ -458,20 +401,20 @@ export async function generateStudioWork(options: GenerateOptions): Promise<Gene
         `Current body:\n${options.currentSection.body}`,
         "",
         "Intake (this request stays on the device; real client values may be present):",
-        intakeBlock(options.intake),
+        formatIntakeBlock(options.intake),
       ].join("\n")
     : [
         "Compose a complete website brief for a design studio handoff.",
         schemaInstructions(),
         "",
         "Intake (this request stays on the device; real client values may be present):",
-        intakeBlock(options.intake),
+        formatIntakeBlock(options.intake),
       ].join("\n");
 
   const mode = options.sectionId ? "section" as const : "full" as const;
 
   const accept = (raw: unknown) => {
-    const restored = restoreValue(raw, plan);
+    const restored = polishBundle(restoreValue(raw, plan));
     const checked = validateBundle(restored, mode, options.sectionId);
     if (!checked.ok || !checked.bundle) {
       return { ok: false as const, errors: checked.errors };

@@ -307,6 +307,12 @@ select:focus-visible,
   min-height: 0;
   overflow: auto;
   padding: 28px 36px 72px;
+  animation: tab-enter 320ms ease;
+}
+
+@keyframes tab-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* Buttons */
@@ -453,10 +459,24 @@ select:focus-visible,
 
 .section-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 1rem;
+  align-items: flex-start;
+  gap: 0.75rem 1rem;
   margin-bottom: 0.65rem;
+}
+
+.section-head h3 {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.section-head .regen-btn,
+.section-head button.ghost {
+  flex: 0 0 auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .section-head h3,
@@ -1661,4 +1681,102 @@ body { background: var(--at-paper); color: #1C1917; }
   .bottom-nav button[data-active="true"] { color: #1C1917; background: rgba(28, 25, 23, 0.06); }
   .studio, body { padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px)); }
   .toast { bottom: 5.6rem; }
+}
+
+
+/* Compose skeleton */
+.compose-skeleton {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+.skeleton-status {
+  margin: 0 0 0.25rem;
+  font-size: 0.9rem;
+  color: var(--at-muted);
+}
+.skeleton-block {
+  display: grid;
+  gap: 0.55rem;
+  padding: 1rem 0 1.15rem;
+  border-top: 1px solid var(--at-border);
+}
+.skeleton-line {
+  height: 0.7rem;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--at-border) 80%, var(--at-card)) 0%,
+    color-mix(in srgb, var(--at-card) 70%, var(--at-ink)) 45%,
+    color-mix(in srgb, var(--at-border) 80%, var(--at-card)) 100%
+  );
+  background-size: 200% 100%;
+  animation: ab-shimmer 1.4s ease-in-out infinite;
+}
+.skeleton-title { width: 38%; height: 0.9rem; }
+.skeleton-w96 { width: 96%; }
+.skeleton-w88 { width: 88%; }
+.skeleton-w72 { width: 72%; }
+@keyframes ab-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* Privacy receipt: architecture + sent payload */
+.architecture-card {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem 1.05rem;
+  border: 1px solid var(--at-border);
+  border-radius: var(--radius-card);
+  background: var(--at-card);
+}
+.architecture-card .label { margin: 0 0 0.55rem; }
+.architecture-card ol {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.45rem;
+  color: var(--at-ink);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.sent-payload,
+.sent-figure {
+  margin: 1.1rem 0 0;
+}
+.sent-payload .label,
+.sent-figure figcaption {
+  margin: 0 0 0.45rem;
+}
+.sent-payload pre,
+.sent-figure pre,
+.device-original pre {
+  margin: 0;
+  max-height: 22rem;
+  overflow: auto;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--at-border);
+  border-radius: var(--radius-input);
+  background: var(--at-canvas);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.device-original {
+  margin: 0.9rem 0 0;
+}
+.device-original summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--at-muted);
+}
+.device-original pre { margin-top: 0.55rem; }
+
+/* Shorter regen label kicks in before the button would clip */
+@media (max-width: 1100px) {
+  .regen-full { display: none; }
+  .regen-short { display: inline; }
 }

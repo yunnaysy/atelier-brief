@@ -1,6 +1,16 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { planPrivacyShield, restoreValue } from "./privacyShield";
+import { CLIENT_PRESETS } from "./presets";
+import { buildFullBriefCloudPrompt, buildSectionCloudPrompt } from "./cloudPrompt";
+import {
+  assertPayloadTokenized,
+  formatIntakeBlock,
+  payloadPreview,
+  planPrivacyShield,
+  polishBundle,
+  polishGeneratedText,
+  restoreValue,
+} from "./privacyShield";
 import type { Intake } from "./types";
 
 const intake: Intake = {
@@ -69,4 +79,69 @@ test("structural restore keeps quotes, backslashes, newlines, and unicode intact
   assert.throws(() => JSON.parse(naive));
   assert.deepEqual(restoreValue({ client: "[CLIENT_NAME]" }, plan), { client: intake.clientName });
   void raw;
+});
+
+test("aster preset plans 11 fields and the actual cloud prompt is fully tokenized", () => {
+  const aster = CLIENT_PRESETS.find((item) => item.id === "aster-hotel");
+  assert.ok(aster);
+  const plan = planPrivacyShield(aster.intake);
+  assert.equal(plan.fields.length, 11, plan.fields.map((field) => field.token).join(", "));
+
+  const sent = buildFullBriefCloudPrompt(plan.redactedIntake);
+  const check = assertPayloadTokenized(sent, plan);
+  assert.equal(check.ok, true, `leaks=${check.leaks.join(",")} missing=${check.missingTokens.join(",")}`);
+  assert.equal(sent.includes(aster.intake.clientName), false);
+  assert.equal(sent.includes(aster.intake.budget), false);
+  assert.equal(sent.includes("€42,000"), false);
+  assert.equal(sent.includes("€40,000"), false);
+  assert.equal(sent.includes("jane.jj.aster@asterhotel.example"), false);
+  assert.equal(sent.includes("+33 1 42 86 17 09"), false);
+  assert.equal(sent.includes("14\\bis Rue des Teinturiers"), false);
+  assert.ok(sent.includes("[CLIENT_NAME]"));
+  assert.ok(sent.includes("[BUDGET_RANGE]"));
+  assert.ok(sent.includes("[PROPRIETARY_NOTES]"));
+  assert.ok(sent.includes("Compose a complete website brief"));
+
+  const preview = payloadPreview(aster.intake, plan);
+  assert.equal(preview.after, formatIntakeBlock(plan.redactedIntake));
+  assert.equal(preview.after.includes(aster.intake.clientName), false);
+  assert.ok(preview.after.includes("[CLIENT_NAME]"));
+  // The receipt stores the full sent prompt, not only the reconstructed intake snapshot.
+  assert.ok(sent.includes(preview.after));
+  assert.ok(sent.length > preview.after.length);
+});
+
+test("section regenerate redacts current title and body before the cloud prompt is built", () => {
+  const aster = CLIENT_PRESETS.find((item) => item.id === "aster-hotel");
+  assert.ok(aster);
+  const plan = planPrivacyShield(aster.intake);
+  const leakyTitle = `Brief for ${aster.intake.clientName}`;
+  const leakyBody = `Budget is ${aster.intake.budget}. ${aster.intake.confidentialNotes}`;
+  const sent = buildSectionCloudPrompt(
+    plan.redactedIntake,
+    "executive-summary",
+    plan.redactText(leakyTitle),
+    plan.redactText(leakyBody),
+  );
+  const check = assertPayloadTokenized(sent, plan);
+  assert.equal(check.ok, true, `leaks=${check.leaks.join(",")} missing=${check.missingTokens.join(",")}`);
+  assert.equal(sent.includes(aster.intake.clientName), false);
+  assert.equal(sent.includes("€42,000"), false);
+  assert.equal(sent.includes("jane.jj.aster@asterhotel.example"), false);
+  assert.ok(sent.includes("[CLIENT_NAME]"));
+  assert.ok(sent.includes("[BUDGET_RANGE]"));
+});
+
+test("polishGeneratedText removes doubled articles and common model typos", () => {
+  assert.equal(
+    polishGeneratedText("Stays under the The Aster Hotel feel considered."),
+    "Stays under the Aster Hotel feel considered.",
+  );
+  assert.equal(polishGeneratedText("Priortiy page: Garden Room"), "Priority page: Garden Room");
+  assert.equal(polishGeneratedText("A a quiet courtyard."), "A quiet courtyard.");
+  const bundle = polishBundle({
+    sections: [{ title: "Priortiy page", body: "Book under the The maison." }],
+  });
+  assert.equal(bundle.sections[0].title, "Priority page");
+  assert.equal(bundle.sections[0].body, "Book under the maison.");
 });

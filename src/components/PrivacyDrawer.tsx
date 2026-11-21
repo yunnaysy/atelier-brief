@@ -64,6 +64,15 @@ export function PrivacyDrawer({
             <div data-testid="privacy-receipt">
               {receipt ? (
                 <>
+                  <aside className="architecture-card" data-testid="hybrid-architecture">
+                    <p className="label">How this brief is composed</p>
+                    <ol>
+                      <li>On this device, Privacy Shield replaces configured confidential fields and detected emails or phones with reversible tokens.</li>
+                      <li>If Chrome 139+ has Gemini Nano available, the brief can be composed on-device with the original values. That path is only claimed when the receipt badges it as on-device.</li>
+                      <li>Otherwise, with your consent, only the tokenized payload is sent to Firebase AI Logic in the cloud (Gemini 3.5 Flash-Lite on the Spark free tier). Tokens are restored locally after the response.</li>
+                      <li>App Check may be configured on this project. Enforcement is off, so App Check tokens are not claimed as verified.</li>
+                    </ol>
+                  </aside>
                   <dl className="inspector-grid">
                     <div><dt>Session</dt><dd>{receipt.sessionId}</dd></div>
                     <div><dt>Inference source</dt><dd data-testid="inspector-source">{source}</dd></div>
@@ -75,6 +84,16 @@ export function PrivacyDrawer({
                   <p className="reason">{receipt.disclaimer}</p>
                   {receipt.tokens.length ? (
                     <p className="reason">Placeholders: {receipt.tokens.join(", ")}</p>
+                  ) : null}
+                  {telemetry?.promptAfter ? (
+                    <div className="sent-payload" data-testid="privacy-sent-payload">
+                      <p className="label">
+                        {telemetry.cloudAttempted
+                          ? "Redacted payload sent to API"
+                          : "Redacted payload prepared for API (not sent)"}
+                      </p>
+                      <pre data-testid="privacy-after-receipt">{telemetry.promptAfter}</pre>
+                    </div>
                   ) : null}
                   <button
                     type="button"
@@ -125,20 +144,23 @@ export function PrivacyDrawer({
                     <div className="diff-head">
                       <p className="label">Redaction · {telemetry.redactionCount} field{telemetry.redactionCount === 1 ? "" : "s"}</p>
                       <p className="reason" style={{ margin: 0 }}>
-                        Before stays on this device. After is the cloud-bound payload with reversible tokens.
+                        The block below is the exact tokenized prompt prepared for Firebase AI Logic
+                        {telemetry.cloudAttempted ? " and sent when cloud generation was used" : " (no cloud request was sent for this session)"}.
                         This is not a guarantee of full anonymization of arbitrary free-text context.
                       </p>
                     </div>
-                    <div className="diff-grid">
-                      <figure>
-                        <figcaption>Before (on this device)</figcaption>
-                        <pre>{telemetry.promptBefore || "—"}</pre>
-                      </figure>
-                      <figure>
-                        <figcaption>After (cloud-bound payload)</figcaption>
-                        <pre data-testid="privacy-after">{telemetry.promptAfter || "—"}</pre>
-                      </figure>
-                    </div>
+                    <figure className="sent-figure">
+                      <figcaption>
+                        {telemetry.cloudAttempted
+                          ? "Redacted payload sent to API"
+                          : "Redacted payload prepared for API (not sent)"}
+                      </figcaption>
+                      <pre data-testid="privacy-after">{telemetry.promptAfter || "—"}</pre>
+                    </figure>
+                    <details className="device-original">
+                      <summary>On-device original (not sent to the API)</summary>
+                      <pre data-testid="privacy-before">{telemetry.promptBefore || "—"}</pre>
+                    </details>
                   </div>
                 </>
               ) : (

@@ -70,6 +70,13 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByText("almost smell")).toHaveCount(0);
   await expect(page.getByText("32–58")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Executive Summary" })).toBeVisible();
+  await expect(page.getByText("Priortiy")).toHaveCount(0);
+  const regen = page.getByTestId("regen-executive-summary");
+  await expect(regen).toBeVisible();
+  const regenOverflow = await regen.evaluate((el) => el.scrollWidth <= el.clientWidth + 1);
+  expect(regenOverflow, "Regenerate button label is clipped").toBeTruthy();
+  const regenText = (await regen.innerText()).replace(/\s+/g, " ").trim();
+  expect(["Regenerate brief", "Regenerate", "Regenerating…"]).toContain(regenText);
 
   await page.screenshot({
     path: path.join(shots, "v3_1_desktop_brief.png"),
@@ -81,6 +88,14 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("privacy-drawer")).toBeVisible();
   await expect(page.getByTestId("privacy-receipt")).toBeVisible();
   await expect(page.getByText(/AB-\d{3}/).first()).toBeVisible();
+  await expect(page.getByTestId("hybrid-architecture")).toBeVisible();
+  await expect(page.getByTestId("privacy-sent-payload")).toBeVisible();
+  await expect(page.getByTestId("privacy-after-receipt")).toContainText("[CLIENT_NAME]");
+  await expect(page.getByTestId("privacy-after-receipt")).toContainText("[BUDGET_RANGE]");
+  await expect(page.getByTestId("privacy-after-receipt")).toContainText("[PROPRIETARY_NOTES]");
+  await expect(page.getByTestId("privacy-after-receipt")).not.toContainText('Maison "JJ" Aster');
+  await expect(page.getByTestId("privacy-after-receipt")).not.toContainText("€42,000");
+  await expect(page.getByTestId("privacy-after-receipt")).not.toContainText("jane.jj.aster@asterhotel.example");
   await page.screenshot({
     path: path.join(shots, "v3_1_privacy_receipt.png"),
     scale: "device",
@@ -91,7 +106,13 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.getByTestId("hybrid-inspector")).toBeVisible();
   await expect(page.getByTestId("privacy-diff")).toBeVisible();
   await expect(page.getByTestId("privacy-after")).toContainText("[CLIENT_NAME]");
+  await expect(page.getByTestId("privacy-after")).toContainText("[BUDGET_RANGE]");
+  await expect(page.getByTestId("privacy-after")).toContainText("Compose a complete website brief");
   await expect(page.getByTestId("privacy-after")).not.toContainText('Maison "JJ" Aster');
+  await expect(page.getByTestId("privacy-after")).not.toContainText("€42,000");
+  await expect(page.getByTestId("privacy-after")).not.toContainText("jane.jj.aster@asterhotel.example");
+  // On-device original is collapsed so the default view only shows tokens.
+  await expect(page.getByTestId("privacy-before")).toBeHidden();
   await page.screenshot({
     path: path.join(shots, "v3_1_inspector.png"),
     scale: "device",
@@ -207,7 +228,9 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
     (line) =>
       !line.includes("favicon") &&
       !line.includes("Download the React DevTools") &&
-      !/Failed to load resource/i.test(line),
+      !/Failed to load resource/i.test(line) &&
+      !/App Check|appCheck|reCAPTCHA|recaptcha/i.test(line) &&
+      !/Unable to obtain a valid App Check token/i.test(line),
   );
   expect(serious, serious.join("\n")).toEqual([]);
 });
