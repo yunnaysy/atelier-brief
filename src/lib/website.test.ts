@@ -3,7 +3,7 @@ import test from "node:test";
 import { buildRedactedWebsitePrompt } from "./cloudPrompt";
 import { composeLocalBrief } from "./localStudio";
 import { planPrivacyShield, restoreValue } from "./privacyShield";
-import { composeLocalWebsite, lintGuestCopy, LOREM_RE, scrubSiteCopy, STRATEGY_LANGUAGE_RE, validateSiteCopy } from "./siteCopy";
+import { composeLocalWebsite, lintGuestCopy, LOREM_RE, normalizeSiteCopy, scrubSiteCopy, STRATEGY_LANGUAGE_RE, validateSiteCopy } from "./siteCopy";
 import { creditsForCopy, renderSiteHtml } from "./siteRenderer";
 import { isWarmCreamHex, resolveFonts, resolvePalette } from "./siteTheme";
 import { defaultArtDirection, type Intake } from "./types";
@@ -180,4 +180,29 @@ test("default art direction is gallery white, and the renderer does not silently
   assert.equal(display.rendered, "Instrument Serif");
   assert.equal(body.status, "substitute");
   assert.equal(body.rendered, "DM Sans");
+});
+
+test("gallery uses each reference photo once, even when the model returns unknown or repeated ids", () => {
+  const copy = normalizeSiteCopy({
+    headline: "A house",
+    gallery: [
+      { photoId: "lobby", caption: "a" },
+      { photoId: "lounge", caption: "b" },
+      { photoId: "hero", caption: "c" },
+      { photoId: "spa", caption: "d" },
+    ],
+  });
+  const ids = copy.gallery.map((item) => item.photoId);
+  assert.deepEqual([...ids].sort(), ["garden", "hero", "water"]);
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test("website prompt schema only names photoIds that exist in the bundled catalog", () => {
+  const intake = asterIntake();
+  const bundle = composeLocalBrief(intake);
+  const plan = planPrivacyShield(intake);
+  const prompt = buildRedactedWebsitePrompt(intake, bundle.sections, bundle.sitemap, bundle.artDirection, plan);
+  const named = [...prompt.matchAll(/"photoId": "([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(named.length >= 8);
+  for (const id of named) assert.ok(["hero", "garden", "water"].includes(id), id);
 });

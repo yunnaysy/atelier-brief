@@ -252,16 +252,20 @@ export function normalizeSiteCopy(raw: unknown): SiteCopy {
     })
     .filter((item) => item.title && item.body)
     .slice(0, 4);
-  const gallery: SiteGalleryItem[] = galleryIn
-    .map((item) => {
-      const row = asRecord(item) ?? {};
-      return {
-        photoId: assignPhoto(cleanLine(row.photoId), "hero"),
-        caption: cleanLine(row.caption),
-      };
-    })
-    .filter((item) => photoById(item.photoId))
-    .slice(0, 6);
+  // One tile per catalog photo: unknown or repeated ids take the next unused photo,
+  // so the gallery never shows the same reference image twice.
+  const catalog = defaultSitePhotoIds();
+  const usedInGallery = new Set<string>();
+  const gallery: SiteGalleryItem[] = [];
+  for (const item of galleryIn) {
+    const row = asRecord(item) ?? {};
+    const asked = cleanLine(row.photoId);
+    const photoId =
+      photoById(asked) && !usedInGallery.has(asked) ? asked : catalog.find((id) => !usedInGallery.has(id));
+    if (!photoId) break;
+    usedInGallery.add(photoId);
+    gallery.push({ photoId, caption: cleanLine(row.caption) });
+  }
 
   return {
     kicker: cleanLine(rec.kicker),

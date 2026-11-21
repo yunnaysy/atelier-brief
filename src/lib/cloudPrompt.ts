@@ -80,21 +80,20 @@ export function websiteSchemaInstructions(): string {
   "aboutBody": "two sentences about the house or practice",
   "roomsTitle": "...",
   "rooms": [
-    { "name": "...", "lede": "two sentences", "photoId": "suite" },
-    { "name": "...", "lede": "two sentences", "photoId": "pool-suite" }
+    { "name": "...", "lede": "two sentences", "photoId": "garden" },
+    { "name": "...", "lede": "two sentences", "photoId": "water" }
   ],
   "experiencesTitle": "...",
   "experiences": [
-    { "title": "...", "body": "two sentences", "photoId": "pool" },
-    { "title": "...", "body": "two sentences", "photoId": "restaurant" },
-    { "title": "...", "body": "two sentences", "photoId": "spa" }
+    { "title": "...", "body": "two sentences", "photoId": "hero" },
+    { "title": "...", "body": "two sentences", "photoId": "garden" },
+    { "title": "...", "body": "two sentences", "photoId": "water" }
   ],
   "galleryTitle": "...",
   "gallery": [
-    { "photoId": "lobby", "caption": "one sentence" },
-    { "photoId": "lounge", "caption": "one sentence" },
-    { "photoId": "library", "caption": "one sentence" },
-    { "photoId": "spa", "caption": "one sentence" }
+    { "photoId": "hero", "caption": "one sentence" },
+    { "photoId": "garden", "caption": "one sentence" },
+    { "photoId": "water", "caption": "one sentence" }
   ],
   "bookingTitle": "...",
   "bookingBody": "two sentences inviting a direct reservation or enquiry",
@@ -114,7 +113,7 @@ Rules:
 - English only. No lorem ipsum, no placeholder text, no exclamation-heavy sales copy, no generic startup voice.
 - Write like a small editorial house journal: concrete, calm, specific.
 - Use only the photoId values listed in the catalog.
-- Provide at least two rooms, three experiences, and three gallery items.
+- Provide two rooms, three experiences, and exactly three gallery items that use each catalog photo once.
 - Do not mention cream, beige, or a default palette unless the art direction already specifies it.
 - ${DOUBLED_ARTICLE_HINT}`;
 }
