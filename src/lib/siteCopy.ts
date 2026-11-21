@@ -39,6 +39,11 @@ function cleanLine(value: unknown): string {
 
 function stripPrivateMaterial(text: string, intake: Intake): string {
   let out = text;
+  // The client's legal entity is confidential; guest-facing copy uses the public house name.
+  const legal = (intake.clientName ?? "").trim();
+  const house = (intake.projectName ?? "").trim();
+  if (legal && house && legal !== house) out = out.split(legal).join(house);
+  out = out.split("[CLIENT_NAME]").join(house || "the house");
   const secrets = [
     intake.budget,
     intake.confidentialNotes,

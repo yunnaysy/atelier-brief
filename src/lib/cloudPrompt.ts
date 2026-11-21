@@ -109,7 +109,7 @@ export function websiteSchemaInstructions(): string {
 }
 Rules:
 - This copy will be published on a public marketing website. Never include budget figures, confidential notes, private contact details, or Privacy Shield tokens such as [BUDGET_RANGE] or [PROPRIETARY_NOTES].
-- You may use the project or client name tokens naturally when they appear in the intake; they will be restored on the device.
+- Use the [PROJECT_NAME] token for the hotel's public name; it will be restored on the device. Never use [CLIENT_NAME]: that is the owner's private legal entity and must not appear on the public site.
 - This renderer always builds a hospitality website: rooms are rooms or suites a guest can stay in, experiences are things guests do during a stay, and the enquiry asks for arrival, departure, and guests. Write for travelers, not for business clients; never describe the house as an agency, consultancy, or studio.
 - English only. No lorem ipsum, no placeholder text, no exclamation-heavy sales copy, no generic startup voice.
 - Write like a small editorial house journal: concrete, calm, specific.

@@ -105,7 +105,8 @@ test("restored website copy keeps the hotel name, scrubs budget, and drops strat
   const restored = restoreValue(raw, plan) as typeof raw;
   const linted = lintGuestCopy(scrubSiteCopy(validateSiteCopy(restored).copy!, intake), intake);
   assert.ok(linted.copy.headline.includes("The Aster Hotel"));
-  assert.ok(linted.copy.lede.includes('Maison "JJ" Aster & Co.'));
+  assert.equal(linted.copy.lede.includes("Maison"), false, linted.copy.lede);
+  assert.ok(linted.copy.lede.includes("The Aster Hotel"), linted.copy.lede);
   assert.equal(linted.copy.lede.includes("€42,000"), false);
   assert.equal(STRATEGY_LANGUAGE_RE.test(linted.copy.lede), false);
   assert.ok(linted.warnings.some((item) => /strategy/i.test(item)));
@@ -223,4 +224,15 @@ test("house style turns a warm cloud palette into white, charcoal, and neutral g
   assert.equal(palette[4].hex, "#C86D51");
   assert.equal(notes.length, 2);
   assert.ok(notes.every((note) => note.startsWith("House style:")));
+});
+
+test("guest copy never publishes the client's legal entity; it uses the public house name", () => {
+  const intake = asterIntake();
+  const plan = planPrivacyShield(intake);
+  const local = composeLocalWebsite({ intake, sections: [], sitemap: [], artDirection: defaultArtDirection() } as never);
+  const restored = restoreValue({ ...local, headline: "Welcome to [CLIENT_NAME], where restraint meets hospitality." }, plan);
+  assert.ok(restored.headline.includes('Maison "JJ" Aster'));
+  const scrubbed = scrubSiteCopy(restored, intake);
+  assert.equal(scrubbed.headline.includes("Maison"), false, scrubbed.headline);
+  assert.ok(scrubbed.headline.includes("The Aster Hotel"), scrubbed.headline);
 });
