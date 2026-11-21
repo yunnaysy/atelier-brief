@@ -36,7 +36,7 @@ export function schemaInstructions(): string {
     }
   ]
 }
-Write 2 short paragraphs per brief section (except Discovery Questions, which should be a numbered list of 5). Provide 5 or 6 sitemap pages with unique ids. Palette must include 5 colors with real #RRGGBB hex values. Provide at least 3 design-decision rationale items, each with recommendation, reasoning, businessObjective, and implementation. English only. No markdown fences. ${DOUBLED_ARTICLE_HINT}`;
+Write 2 short paragraphs per brief section (except Discovery Questions, which should be a numbered list of 5). Provide 5 or 6 sitemap pages with unique ids. Palette must include 5 colors with real #RRGGBB hex values. Studio house style: the field/background is pure white #FFFFFF and primary text is charcoal #1C1917; rules and secondary text use neutral greys; at most one accent color. Never use cream, ivory, beige, alabaster, taupe, sand, linen, or any warm off-white. Provide at least 3 design-decision rationale items, each with recommendation, reasoning, businessObjective, and implementation. English only. No markdown fences. ${DOUBLED_ARTICLE_HINT}`;
 }
 
 export function buildFullBriefCloudPrompt(redactedIntake: Intake): string {

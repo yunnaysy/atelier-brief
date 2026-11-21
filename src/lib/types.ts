@@ -113,6 +113,8 @@ export interface ArtDirection {
   motion: string;
   palette: PaletteColor[];
   hierarchy: TypeSpecimen[];
+  /** House-style adjustments applied to the model's palette, shown in the palette log. */
+  paletteNotes?: string[];
 }
 
 export interface DesignRationaleItem {

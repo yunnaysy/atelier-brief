@@ -206,3 +206,21 @@ test("website prompt schema only names photoIds that exist in the bundled catalo
   assert.ok(named.length >= 8);
   for (const id of named) assert.ok(["hero", "garden", "water"].includes(id), id);
 });
+
+test("house style turns a warm cloud palette into white, charcoal, and neutral greys, and says so", async () => {
+  const { neutralizeHousePalette } = await import("./siteTheme");
+  const { palette, notes } = neutralizeHousePalette([
+    { name: "Alabaster", hex: "#F9F8F6", role: "Primary background surface" },
+    { name: "Obsidian", hex: "#1A1A1A", role: "Primary typography" },
+    { name: "Warm Taupe", hex: "#D3C5B4", role: "Secondary accents and borders" },
+    { name: "Sage", hex: "#8A9A86", role: "Interactive states" },
+    { name: "Terracotta", hex: "#C86D51", role: "Conversion focus" },
+  ]);
+  assert.equal(palette[0].hex, "#FFFFFF");
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(palette[2].hex.slice(i, i + 2), 16));
+  assert.ok(r === g && g === b, palette[2].hex);
+  assert.equal(palette[1].hex, "#1A1A1A");
+  assert.equal(palette[4].hex, "#C86D51");
+  assert.equal(notes.length, 2);
+  assert.ok(notes.every((note) => note.startsWith("House style:")));
+});

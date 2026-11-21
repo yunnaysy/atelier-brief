@@ -1,3 +1,4 @@
+import { neutralizeHousePalette } from "./siteTheme";
 import type { ArtDirection, BriefSection, DesignRationaleItem, GeneratedBundle, SitemapPage } from "./types";
 import { SECTION_DEFS } from "./types";
 
@@ -88,6 +89,7 @@ function asArt(value: unknown): ArtDirection | null {
         };
       })
     : [];
+  const house = neutralizeHousePalette(palette);
   return {
     narrative: text(row.narrative),
     displayFamily: text(row.displayFamily),
@@ -95,8 +97,9 @@ function asArt(value: unknown): ArtDirection | null {
     monoFamily: text(row.monoFamily),
     density: (text(row.density) as ArtDirection["density"]) || "balanced",
     motion: text(row.motion),
-    palette,
+    palette: house.palette,
     hierarchy,
+    ...(house.notes.length ? { paletteNotes: house.notes } : {}),
   };
 }
 

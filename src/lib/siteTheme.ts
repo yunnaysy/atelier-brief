@@ -39,6 +39,45 @@ export function pickPaletteColor(
   return normalizeHex(found?.hex ?? palette[index]?.hex, fallback);
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(normalizeHex(hex, "#000000").slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function grey(value: number): string {
+  const v = Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, "0").toUpperCase();
+  return `#${v}${v}${v}`;
+}
+
+/**
+ * Studio house style: white field, charcoal type, neutral greys, one accent.
+ * Warm off-whites (cream, ivory, alabaster) become #FFFFFF and warm light neutrals
+ * (taupe, sand, linen) become a neutral grey of the same lightness. Saturated accents
+ * are kept. Every change is returned as a note so it is visible, never silent.
+ */
+export function neutralizeHousePalette(palette: PaletteColor[]): { palette: PaletteColor[]; notes: string[] } {
+  const notes: string[] = [];
+  const next = palette.map((color) => {
+    if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test((color.hex ?? "").trim())) return color;
+    const hex = normalizeHex(color.hex, "#FFFFFF");
+    const [r, g, b] = hexToRgb(hex);
+    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+    const warmth = r - b;
+    const chroma = Math.max(r, g, b) - Math.min(r, g, b);
+    if (luma >= 232 && warmth >= 2 && chroma <= 40) {
+      notes.push(`House style: ${color.name} ${hex} (${color.role}) is a warm off-white, rendered as Gallery White #FFFFFF.`);
+      return { ...color, name: "Gallery White", hex: "#FFFFFF" };
+    }
+    if (luma >= 150 && luma < 232 && warmth >= 8 && chroma <= 48) {
+      const neutral = grey(luma);
+      notes.push(`House style: ${color.name} ${hex} (${color.role}) is a warm neutral, rendered as Neutral Grey ${neutral}.`);
+      return { ...color, name: "Neutral Grey", hex: neutral };
+    }
+    return color;
+  });
+  return { palette: next, notes };
+}
+
 /**
  * Use the brief's palette as specified. Never silently replace a warm or cream
  * field color — log it so the receipt can show what was actually rendered.
@@ -59,6 +98,7 @@ export function resolvePalette(art: ArtDirection): { palette: PaletteColor[]; lo
       );
     }
   }
+  for (const note of art.paletteNotes ?? []) log.push(note);
   const field = pickPaletteColor(palette, /field|paper|ground|canvas|background/i, "#FFFFFF", 0);
   log.push(`Rendered field color: ${field}.`);
   return { palette, log };
