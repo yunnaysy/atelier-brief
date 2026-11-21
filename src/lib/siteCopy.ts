@@ -56,18 +56,6 @@ function stripPrivateMaterial(text: string, intake: Intake): string {
   return out;
 }
 
-function firstSection(sections: BriefSection[], id: string): string {
-  return sections.find((section) => section.id === id)?.body ?? "";
-}
-
-function firstSentence(text: string, fallback: string): string {
-  const compact = text.replace(/\s+/g, " ").trim();
-  if (!compact) return fallback;
-  const match = compact.match(/(.+?[.!?])\s/);
-  const sentence = (match ? match[1] : compact).trim();
-  return sentence.length > 280 ? `${sentence.slice(0, 277).trim()}…` : sentence;
-}
-
 function hotelName(intake: Intake): string {
   return (intake.projectName || intake.clientName || "The House").trim();
 }
@@ -128,111 +116,79 @@ export function composeLocalWebsite(input: {
   artDirection: ArtDirection;
 }): SiteCopy {
   const name = hotelName(input.intake);
-  const exec = firstSection(input.sections, "executive-summary");
-  const audience = firstSection(input.sections, "audience-positioning");
-  const tone = firstSection(input.sections, "tone-voice");
   const industry = (input.intake.industry || "hospitality").trim();
   const hospitable = /hotel|hospitality|resort|inn|maison/i.test(`${industry} ${name}`);
 
-  const briefSpeak = /\b(website|brief|sitemap|handoff|deliverable|art direction|conversion)\b/i;
   const kicker = hospitable ? "A house, not a landmark" : name;
   const headline = hospitable
     ? `Arrive slowly at ${name}.`
     : `A considered house for ${name}.`;
-  const fromExec = firstSentence(exec, "");
-  const lede =
-    fromExec && !briefSpeak.test(fromExec)
-      ? fromExec
-      : hospitable
-        ? `${name} is kept for travelers who would rather write to the house than book through a marketplace. The rooms, the water, and the table are arranged with the same quiet reserve.`
-        : `${name} presents its work in a short public site: precise typography, a restrained palette, and a clear path to enquire.`;
+  const lede = hospitable
+    ? `A quieter kind of stay, shaped by open rooms and the pleasure of having nowhere in particular to be. Discover the house, find your room, and make the days your own.`
+    : `${name} presents its work plainly: a short public site, precise typography, and a clear path to enquire.`;
 
-  const fromAudience = firstSentence(audience, "");
-  const aboutBody =
-    fromAudience && !briefSpeak.test(fromAudience)
-      ? `${fromAudience} ${
-          hospitable
-            ? "The house is arranged as a sequence of courts and rooms rather than a catalogue of amenities."
-            : "The work is shown as a short, readable argument rather than a marketing funnel."
-        }`
-      : hospitable
-        ? `${name} sits in a quieter register of hospitality: linen, water, and a table that does not shout. Guests are invited to stay because the house feels already inhabited, not because a campaign told them to.`
-        : `${name} presents itself with typographic reserve: a clear promise, evidence in the work, and a calm invitation to begin.`;
+  const aboutBody = hospitable
+    ? `${name} is kept for travelers who would rather write to the house than book through a marketplace. The stay is personal, the design is considered, and nothing here is arranged as a catalogue of amenities.`
+    : `${name} presents itself with typographic reserve: a clear promise, evidence in the work, and a calm invitation to begin.`;
 
   const rooms: SiteRoom[] = hospitable
     ? [
         {
           name: "The Garden Suite",
-          lede: "A high-ceilinged room looking onto the court. Linen, a writing table, and shutters that keep the afternoon in check.",
-          photoId: "suite",
+          lede: "A high-ceilinged room, dressed simply, with doors that open toward planted ground. Kept for guests who want a quieter stay, booked directly with the house.",
+          photoId: "garden",
         },
         {
           name: "The Pool Suite",
-          lede: "A quieter wing with its own water. The bed is dressed simply; the door opens to stone and shade.",
-          photoId: "pool-suite",
+          lede: "A different kind of room: private water a few steps from the threshold, for days that are allowed to move slowly. Still booked by writing to the house.",
+          photoId: "water",
         },
       ]
     : [
         {
           name: "The work, in rooms",
-          lede: firstSentence(tone, "Each section of the site is a room: a headline, a short argument, and a path forward."),
-          photoId: "suite",
+          lede: "Each section of the site is a room: a headline, a short argument, and a path forward.",
+          photoId: "garden",
         },
         {
           name: "The atelier",
           lede: "A second chamber for process and materials — typography, palette, and the decisions behind them.",
-          photoId: "library",
+          photoId: "hero",
         },
       ];
 
   const experiences: SiteExperience[] = hospitable
     ? [
         {
-          title: "The water",
-          body: "A long pool and a terrace that faces the main house. Late light is the point; swimming is optional.",
-          photoId: "pool",
+          title: "Arrive in your own time",
+          body: "The house is arranged for a slower day. There is no itinerary to complete, and no marketplace standing between you and a stay.",
         },
         {
-          title: "The table",
-          body: "Breakfast and supper in a dining room that opens to the garden. The menu is short, and the cloth is white.",
-          photoId: "restaurant",
+          title: "Stay as a guest, not a booking",
+          body: "Reservations are held directly. Write with your dates, and the house will answer with what is free.",
         },
         {
-          title: "The spa",
-          body: "An indoor pool cut into stone, used slowly. Treatments are booked with the same concierge who keeps the rooms.",
-          photoId: "spa",
+          title: "A quieter kind of hospitality",
+          body: "The rooms are for travelers and couples who already prefer distinctive houses to landmarks, and who would rather be known than processed.",
         },
       ]
     : [
-        {
-          title: "The argument",
-          body: "A clear opening that states what the practice is for, and who it is not for.",
-          photoId: "library",
-        },
-        {
-          title: "The evidence",
-          body: "Selected work and materials, presented as a gallery rather than a grid of case-study cards.",
-          photoId: "lounge",
-        },
-        {
-          title: "The invitation",
-          body: "A single, unhurried call to begin — a conversation, not a checkout.",
-          photoId: "restaurant",
-        },
+        { title: "The argument", body: "A clear opening that states what the practice is for, and who it is not for." },
+        { title: "The evidence", body: "Selected work, presented as a short gallery rather than a grid of case-study cards." },
+        { title: "The invitation", body: "A single, unhurried call to begin — a conversation, not a checkout." },
       ];
 
   const gallery: SiteGalleryItem[] = [
-    { photoId: "lobby", caption: "The lobby at the blue hour, when the lanterns do the work of a sign." },
-    { photoId: "lounge", caption: "A lounge kept low, looking out to the garden." },
-    { photoId: "library", caption: "The library: shelves, a desk, and afternoon light." },
-    { photoId: "spa", caption: "The spa pool, cut into stone." },
+    { photoId: "hero", caption: "Reference imagery, not photographs of the house." },
+    { photoId: "garden", caption: "Reference imagery, not photographs of the house." },
+    { photoId: "water", caption: "Reference imagery, not photographs of the house." },
   ];
 
   const copy: SiteCopy = {
     kicker,
     headline,
     lede,
-    ctaLabel: hospitable ? "Reserve a stay" : "Begin a conversation",
+    ctaLabel: hospitable ? "Explore the rooms" : "Begin a conversation",
     aboutTitle: hospitable ? "The house" : "The practice",
     aboutBody,
     roomsTitle: hospitable ? "Rooms" : "Chambers",
@@ -243,16 +199,17 @@ export function composeLocalWebsite(input: {
     gallery,
     bookingTitle: hospitable ? "Write to the house" : "Write to the studio",
     bookingBody: hospitable
-      ? `Reservations are held directly with ${name}. Share your dates, and the house will answer with what is free and how the days are usually spent.`
-      : `Enquiries reach the studio directly. Share the brief you already have, or the question you have not yet written down.`,
-    bookingCta: hospitable ? "Request dates" : "Send an enquiry",
+      ? `Tell us when you would like to visit. We'll respond directly with availability and the details of your stay.`
+      : `Enquiries reach the studio directly. Share the question you have not yet written down.`,
+    bookingCta: hospitable ? "Request your dates" : "Send an enquiry",
     footerTagline: hospitable
       ? `${name} — a house kept for a few, booked without a marketplace.`
       : `${name} — a public site written from the brief, not the other way around.`,
     nav: defaultNav(),
   };
 
-  return scrubSiteCopy(normalizeSiteCopy(copy), input.intake);
+  const prepared = scrubSiteCopy(normalizeSiteCopy(copy), input.intake);
+  return lintGuestCopy(prepared, input.intake).copy;
 }
 
 export interface SiteCopyValidation {
@@ -277,7 +234,7 @@ export function normalizeSiteCopy(raw: unknown): SiteCopy {
       return {
         name: cleanLine(row.name) || `Room ${index + 1}`,
         lede: cleanLine(row.lede),
-        photoId: assignPhoto(cleanLine(row.photoId), index === 0 ? "suite" : "pool-suite"),
+        photoId: assignPhoto(cleanLine(row.photoId), index === 0 ? "garden" : "water"),
       };
     })
     .filter((room) => room.name && room.lede)
@@ -285,7 +242,7 @@ export function normalizeSiteCopy(raw: unknown): SiteCopy {
   const experiences: SiteExperience[] = experiencesIn
     .map((item, index) => {
       const row = asRecord(item) ?? {};
-      const fallback = ["pool", "restaurant", "spa"][index] ?? "library";
+      const fallback = ["hero", "garden", "water"][index] ?? "hero";
       return {
         title: cleanLine(row.title) || `Experience ${index + 1}`,
         body: cleanLine(row.body),
@@ -298,7 +255,7 @@ export function normalizeSiteCopy(raw: unknown): SiteCopy {
     .map((item) => {
       const row = asRecord(item) ?? {};
       return {
-        photoId: assignPhoto(cleanLine(row.photoId), "lobby"),
+        photoId: assignPhoto(cleanLine(row.photoId), "hero"),
         caption: cleanLine(row.caption),
       };
     })
@@ -345,7 +302,7 @@ export function validateSiteCopy(value: unknown): SiteCopyValidation {
   }
   if (copy.rooms.length < 2) errors.push("Site copy must include at least two rooms.");
   if (copy.experiences.length < 3) errors.push("Site copy must include at least three experiences.");
-  if (copy.gallery.length < 3) errors.push("Site copy must include at least three gallery images.");
+  if (copy.gallery.length < 2) errors.push("Site copy must include at least two reference gallery images.");
   const blob = JSON.stringify(copy);
   if (LOREM_RE.test(blob)) errors.push("Site copy must not include lorem ipsum or placeholder text.");
   if (errors.length) return { ok: false, errors };
@@ -361,4 +318,77 @@ export function sitePhotoIds(copy: SiteCopy): string[] {
   ];
   const extras = defaultSitePhotoIds().filter((id) => !ids.includes(id));
   return [...new Set([...ids, ...extras])];
+}
+
+
+export const STRATEGY_LANGUAGE_RE =
+  /\b(this website should|the website should communicate|target audience|brand aims to position|position itself as|the sitemap|art direction|handoff document|deliverable|conversion funnel|stakeholders|positioning statement|business objective|user flow|the brief (says|asks|requires))\b/i;
+
+const UNSUPPORTED_AMENITY_RE =
+  /\b(spa treatments?|award[- ]winning|michelin|private annex|rate card|family office)\b/i;
+
+function mapText(copy: SiteCopy, fn: (value: string, path: string) => string): SiteCopy {
+  return {
+    ...copy,
+    kicker: fn(copy.kicker, "kicker"),
+    headline: fn(copy.headline, "headline"),
+    lede: fn(copy.lede, "lede"),
+    ctaLabel: fn(copy.ctaLabel, "ctaLabel"),
+    aboutTitle: fn(copy.aboutTitle, "aboutTitle"),
+    aboutBody: fn(copy.aboutBody, "aboutBody"),
+    roomsTitle: fn(copy.roomsTitle, "roomsTitle"),
+    rooms: copy.rooms.map((room, i) => ({
+      ...room,
+      name: fn(room.name, `rooms.${i}.name`),
+      lede: fn(room.lede, `rooms.${i}.lede`),
+    })),
+    experiencesTitle: fn(copy.experiencesTitle, "experiencesTitle"),
+    experiences: copy.experiences.map((item, i) => ({
+      ...item,
+      title: fn(item.title, `experiences.${i}.title`),
+      body: fn(item.body, `experiences.${i}.body`),
+    })),
+    galleryTitle: fn(copy.galleryTitle, "galleryTitle"),
+    gallery: copy.gallery.map((item, i) => ({
+      ...item,
+      caption: fn(item.caption, `gallery.${i}.caption`),
+    })),
+    bookingTitle: fn(copy.bookingTitle, "bookingTitle"),
+    bookingBody: fn(copy.bookingBody, "bookingBody"),
+    bookingCta: fn(copy.bookingCta, "bookingCta"),
+    footerTagline: fn(copy.footerTagline, "footerTagline"),
+  };
+}
+
+function dropOffendingSentences(text: string, pattern: RegExp): string {
+  const parts = text.split(/(?<=[.!?])\s+/);
+  return parts.filter((sentence) => !pattern.test(sentence)).join(" ").trim();
+}
+
+/** Post-generation check: drop strategy language and unsupported amenity claims. */
+export function lintGuestCopy(copy: SiteCopy, intake: Intake): { copy: SiteCopy; warnings: string[] } {
+  const warnings: string[] = [];
+  const confidential = intake.confidentialNotes || "";
+  const next = mapText(copy, (value, path) => {
+    let out = value;
+    if (STRATEGY_LANGUAGE_RE.test(out)) {
+      warnings.push(`Removed strategy language from ${path}.`);
+      out = dropOffendingSentences(out, STRATEGY_LANGUAGE_RE);
+    }
+    if (UNSUPPORTED_AMENITY_RE.test(out) && !UNSUPPORTED_AMENITY_RE.test(`${intake.coreGoal} ${intake.audience} ${intake.industry}`)) {
+      warnings.push(`Removed an unsupported claim from ${path}.`);
+      out = dropOffendingSentences(out, UNSUPPORTED_AMENITY_RE);
+    }
+    if (confidential) {
+      for (const line of confidential.split(/\n+/)) {
+        const snippet = line.trim();
+        if (snippet.length > 12 && out.includes(snippet)) {
+          warnings.push(`Removed confidential phrasing from ${path}.`);
+          out = out.split(snippet).join("").replace(/\s{2,}/g, " ").trim();
+        }
+      }
+    }
+    return out;
+  });
+  return { copy: next, warnings };
 }

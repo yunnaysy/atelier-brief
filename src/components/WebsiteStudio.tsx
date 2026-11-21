@@ -125,10 +125,36 @@ export function WebsiteStudio({
             <iframe
               data-testid="site-preview"
               title="Generated website preview"
-              sandbox="allow-same-origin allow-popups-to-escape-sandbox"
+              sandbox="allow-scripts allow-forms allow-same-origin allow-popups-to-escape-sandbox"
               srcDoc={html}
             />
           </div>
+          {site.designDecisions?.length ? (
+            <aside className="design-decisions" data-testid="design-decisions">
+              <p className="label">Design decisions</p>
+              <p className="website-hint-inline">How this brief became this site — not a template with a name inserted.</p>
+              <dl>
+                {site.designDecisions.map((item, index) => (
+                  <div key={index}>
+                    <dt>{item.from}</dt>
+                    <dd>{item.to}</dd>
+                  </div>
+                ))}
+              </dl>
+              {site.fontMap?.length ? (
+                <ul className="font-map" data-testid="site-font-map">
+                  {site.fontMap.map((item) => (
+                    <li key={item.role}>
+                      {item.role}: {item.requested} → {item.rendered} ({item.status})
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              {site.paletteLog?.length ? (
+                <p className="palette-log" data-testid="palette-log">{site.paletteLog.join(" ")}</p>
+              ) : null}
+            </aside>
+          ) : null}
           <aside className="website-credits" data-testid="website-credits">
             <p className="label">Reference photographs</p>
             <ul>

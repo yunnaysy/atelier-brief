@@ -176,7 +176,10 @@ export default function App() {
         cloudFallbackConsent: cloudConsent,
       });
       const credits = uniqueCredits(result.site.photoIds);
-      const receipt = receiptFromTelemetry(result.telemetry, project.privacyReceipt?.sessionId, credits);
+      const receipt = receiptFromTelemetry(result.telemetry, project.privacyReceipt?.sessionId, credits, {
+        fontMap: result.site.fontMap,
+        executionTrace: result.site.trace,
+      });
       updateProject((current) => ({
         ...current,
         site: result.site,

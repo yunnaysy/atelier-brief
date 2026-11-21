@@ -147,7 +147,7 @@ test("atelier brief studio flow, features, and v3.1 screenshots", async ({ page,
   await expect(page.locator(".display")).toHaveText("The Aster Hotel");
   await expect(page.getByText("Terracotta")).toHaveCount(0);
   await expect(page.getByText("#B76E55")).toHaveCount(0);
-  await expect(page.getByText("Stone Paper")).toBeVisible();
+  await expect(page.getByText("Gallery White")).toBeVisible();
   await expect(page.getByText("Discover the property.")).toBeVisible();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.getByTestId("copy-css-vars").click();

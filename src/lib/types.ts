@@ -85,6 +85,8 @@ export interface PrivacyReceipt {
   redactedPreview: string;
   disclaimer: string;
   photoCredits?: PhotoCredit[];
+  fontMap?: FontSubstitution[];
+  executionTrace?: ReceiptTraceStep[];
 }
 
 export interface PaletteColor {
@@ -143,6 +145,26 @@ export interface Telemetry {
 }
 
 
+
+export interface FontSubstitution {
+  role: "display" | "body" | "mono";
+  requested: string;
+  rendered: string;
+  status: "exact" | "substitute";
+}
+
+export interface DesignDecision {
+  from: string;
+  to: string;
+}
+
+export interface ReceiptTraceStep {
+  id: string;
+  label: string;
+  status: "done" | "skipped" | "not-run";
+  detail: string;
+}
+
 export interface SiteRoom {
   name: string;
   lede: string;
@@ -190,6 +212,11 @@ export interface GeneratedSite {
   photoIds: string[];
   builtAt: string;
   telemetry: Telemetry | null;
+  fontMap: FontSubstitution[];
+  paletteLog: string[];
+  designDecisions: DesignDecision[];
+  copyWarnings: string[];
+  trace: ReceiptTraceStep[];
 }
 
 export interface StudioProject {
@@ -270,18 +297,18 @@ export function newProject(intake: Intake = emptyIntake()): StudioProject {
 export function defaultArtDirection(): ArtDirection {
   return {
     narrative:
-      "A paper-and-ink studio system: a quiet field, charcoal typography, and a single mineral accent reserved for actions.",
+      "A white-and-charcoal studio system: a clean field, charcoal typography, and a single umber accent reserved for actions.",
     displayFamily: "Instrument Serif",
     bodyFamily: "DM Sans",
     monoFamily: "IBM Plex Mono",
     density: "airy",
     motion: "Transitions should feel quiet and brief, like a page turning rather than a dashboard loading.",
     palette: [
-      { name: "Stone Paper", hex: "#F4F2EC", role: "Field" },
-      { name: "Charcoal Ink", hex: "#1C1917", role: "Text" },
-      { name: "Warm Limestone", hex: "#C5C1B6", role: "Rule" },
-      { name: "Deep Pine", hex: "#45584F", role: "Accent" },
-      { name: "Mist Slate", hex: "#8799A0", role: "Secondary" },
+      { name: "Gallery White", hex: "#FFFFFF", role: "Field" },
+      { name: "Charcoal", hex: "#1C1917", role: "Text" },
+      { name: "Stone Grey", hex: "#D6D3D1", role: "Rule" },
+      { name: "Muted Stone", hex: "#78716C", role: "Secondary" },
+      { name: "Umber", hex: "#A66A35", role: "Accent" },
     ],
     hierarchy: [
       {

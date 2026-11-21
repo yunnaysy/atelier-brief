@@ -364,7 +364,7 @@ function defaultRationale(intake: Intake, flavor: "architecture" | "coffee" | "f
         recommendation: "Photograph the actual rooms, materials, and daylight, not lifestyle casting.",
         reasoning: "Guests comparing independent houses already see a great deal of staged hospitality photography. Credible pictures of the rooms and the property will do more to support a reservation than posed lifestyle scenes.",
         businessObjective: "Convert interest into a reservation inquiry by showing the house as it is.",
-        implementation: "A quiet architectural palette of stone paper, charcoal ink, mist slate, deep pine, and warm limestone. Motion stays brief and unobtrusive.",
+        implementation: "A quiet architectural palette of gallery white, charcoal, stone grey, muted stone, and a sparing umber accent. Motion stays brief and unobtrusive.",
       },
     ];
   }

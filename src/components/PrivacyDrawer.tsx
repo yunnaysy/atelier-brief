@@ -122,6 +122,32 @@ export function PrivacyDrawer({
                       </ul>
                     </div>
                   ) : null}
+                  {receipt.executionTrace?.length ? (
+                    <div className="receipt-trace" data-testid="receipt-trace">
+                      <p className="label">Execution trace</p>
+                      <ol>
+                        {receipt.executionTrace.map((step) => (
+                          <li key={step.id} data-status={step.status}>
+                            <strong>{step.label}</strong>
+                            <span> · {step.status}</span>
+                            <p>{step.detail}</p>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
+                  {receipt.fontMap?.length ? (
+                    <div className="receipt-fonts" data-testid="receipt-font-map">
+                      <p className="label">Type in the rendered site</p>
+                      <ul>
+                        {receipt.fontMap.map((item) => (
+                          <li key={item.role}>
+                            {item.role}: requested {item.requested} → rendered {item.rendered} ({item.status})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                   {telemetry?.promptAfter ? (
                     <div className="sent-payload" data-testid="privacy-sent-payload">
                       <p className="label">

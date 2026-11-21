@@ -1,4 +1,4 @@
-import type { PhotoCredit, PrivacyReceipt, Telemetry } from "./types";
+import type { FontSubstitution, PhotoCredit, PrivacyReceipt, ReceiptTraceStep, Telemetry } from "./types";
 
 export const PRIVACY_DISCLAIMER =
   "Privacy Shield redacts configured confidential fields and detected emails or phone numbers before any cloud transmission. It does not guarantee full anonymization of arbitrary free-text context. Projects are stored in this browser (IndexedDB / localStorage); that storage is local, not end-to-end encrypted.";
@@ -12,6 +12,7 @@ export function receiptFromTelemetry(
   telemetry: Telemetry,
   sessionId = makeSessionId(),
   photoCredits?: PhotoCredit[],
+  extras?: { fontMap?: FontSubstitution[]; executionTrace?: ReceiptTraceStep[] },
 ): PrivacyReceipt {
   return {
     sessionId,
@@ -26,6 +27,8 @@ export function receiptFromTelemetry(
     redactedPreview: telemetry.promptAfter,
     disclaimer: PRIVACY_DISCLAIMER,
     photoCredits: photoCredits?.length ? photoCredits : undefined,
+    fontMap: extras?.fontMap?.length ? extras.fontMap : undefined,
+    executionTrace: extras?.executionTrace?.length ? extras.executionTrace : undefined,
   };
 }
 
@@ -38,6 +41,24 @@ export function receiptToMarkdown(receipt: PrivacyReceipt, projectName: string):
         : receipt.badge === "error-fallback"
           ? "Local Fallback"
           : "Studio Preview";
+  const fonts = receipt.fontMap?.length
+    ? [
+        "## Type substitutions",
+        "",
+        ...receipt.fontMap.map(
+          (item) => `- ${item.role}: requested ${item.requested} → rendered ${item.rendered} (${item.status})`,
+        ),
+        "",
+      ]
+    : [];
+  const trace = receipt.executionTrace?.length
+    ? [
+        "## Execution trace",
+        "",
+        ...receipt.executionTrace.map((step) => `- ${step.label} [${step.status}]: ${step.detail}`),
+        "",
+      ]
+    : [];
   const credits = receipt.photoCredits?.length
     ? [
         "## Reference photograph credits",
@@ -68,6 +89,8 @@ export function receiptToMarkdown(receipt: PrivacyReceipt, projectName: string):
     receipt.redactedPreview || "—",
     "```",
     "",
+    ...fonts,
+    ...trace,
     ...credits,
     "## Scope",
     "",

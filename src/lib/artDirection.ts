@@ -65,14 +65,14 @@ export function deriveArtDirection(intake: Intake): ArtDirection {
 
   if (industry.includes("hotel") || industry.includes("hospitality") || industry.includes("aster")) {
     palette = [
-      { name: "Stone Paper", hex: "#F4F2EC", role: "Field" },
-      { name: "Charcoal Ink", hex: "#1C1917", role: "Text" },
-      { name: "Mist Slate", hex: "#8799A0", role: "Secondary" },
-      { name: "Deep Pine", hex: "#45584F", role: "Accent" },
-      { name: "Warm Limestone", hex: "#C5C1B6", role: "Rule" },
+      { name: "Gallery White", hex: "#FFFFFF", role: "Field" },
+      { name: "Charcoal", hex: "#1C1917", role: "Text" },
+      { name: "Stone Grey", hex: "#D6D3D1", role: "Rule" },
+      { name: "Muted Stone", hex: "#78716C", role: "Secondary" },
+      { name: "Umber", hex: "#A66A35", role: "Accent" },
     ];
     narrative =
-      "Typography should balance character with readability. Use a distinctive serif for editorial headlines and a neutral sans-serif for navigation, room information and booking actions. Maintain clear hierarchy across desktop and mobile layouts.";
+      "A white-and-charcoal hospitality system: a clean field, charcoal typography, and a single umber accent used sparingly. Use a distinctive serif for editorial headlines and a neutral sans-serif for navigation, room information and booking actions.";
     density = "airy";
     motion = "Transitions should feel quiet and brief. Avoid bounce, parallax, or motion that competes with photography and type.";
     displayFamily = "Instrument Serif";

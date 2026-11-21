@@ -16,7 +16,9 @@ import { composeLocalBrief, composeLocalSection } from "./localStudio";
 import { buildFullBriefCloudPrompt, buildSectionCloudPrompt, buildRedactedWebsitePrompt, schemaInstructions, websiteSchemaInstructions } from "./cloudPrompt";
 import { formatIntakeBlock, payloadPreview, planPrivacyShield, polishBundle, restoreValue } from "./privacyShield";
 import { REFERENCE_PHOTOS } from "./referencePhotos";
-import { composeLocalWebsite, scrubSiteCopy, validateSiteCopy } from "./siteCopy";
+import { composeLocalWebsite, lintGuestCopy, scrubSiteCopy, validateSiteCopy } from "./siteCopy";
+import { collectPhotoIds } from "./siteRenderer";
+import { buildDesignDecisions, buildWebsiteTrace, themeSnapshot } from "./siteMeta";
 import type {
   ArtDirection,
   BriefSection,
@@ -571,16 +573,23 @@ function localWebsite(options: WebsiteGenerateOptions): GeneratedSite {
     sitemap: options.sitemap,
     artDirection: options.artDirection,
   });
+  const theme = themeSnapshot(options.artDirection);
   return {
     copy,
-    photoIds: [
-      "hero",
-      ...copy.rooms.map((room) => room.photoId),
-      ...copy.experiences.map((item) => item.photoId ?? ""),
-      ...copy.gallery.map((item) => item.photoId),
-    ].filter(Boolean),
+    photoIds: collectPhotoIds(copy),
     builtAt: new Date().toISOString(),
     telemetry: null,
+    fontMap: theme.fontMap,
+    paletteLog: theme.palette.log,
+    designDecisions: buildDesignDecisions({
+      intake: options.intake,
+      art: options.artDirection,
+      telemetry: null,
+      fontMap: theme.fontMap,
+      fieldHex: theme.fieldHex,
+    }),
+    copyWarnings: [],
+    trace: [],
   };
 }
 
@@ -588,14 +597,16 @@ function acceptWebsiteCopy(raw: unknown, plan: ReturnType<typeof planPrivacyShie
   ok: boolean;
   copy?: SiteCopy;
   errors: string[];
+  warnings: string[];
 } {
   const restored = restoreValue(raw, plan);
   const checked = validateSiteCopy(restored);
-  if (!checked.ok || !checked.copy) return { ok: false, errors: checked.errors };
-  const copy = scrubSiteCopy(checked.copy, intake);
-  const again = validateSiteCopy(copy);
-  if (!again.ok || !again.copy) return { ok: false, errors: again.errors };
-  return { ok: true, copy: again.copy, errors: [] };
+  if (!checked.ok || !checked.copy) return { ok: false, errors: checked.errors, warnings: [] };
+  const scrubbed = scrubSiteCopy(checked.copy, intake);
+  const linted = lintGuestCopy(scrubbed, intake);
+  const again = validateSiteCopy(linted.copy);
+  if (!again.ok || !again.copy) return { ok: false, errors: again.errors, warnings: linted.warnings };
+  return { ok: true, copy: again.copy, errors: [], warnings: linted.warnings };
 }
 
 export async function generateWebsiteWork(options: WebsiteGenerateOptions): Promise<WebsiteGenerateResult> {
@@ -620,17 +631,32 @@ export async function generateWebsiteWork(options: WebsiteGenerateOptions): Prom
   let lastSource: "on_device" | "in_cloud" | null = null;
   let lastModel = configured ? config.cloudModel : "local-studio";
 
-  const pack = (copy: SiteCopy, telemetry: Telemetry): GeneratedSite => ({
-    copy,
-    photoIds: [
-      "hero",
-      ...copy.rooms.map((room) => room.photoId),
-      ...copy.experiences.map((item) => item.photoId ?? ""),
-      ...copy.gallery.map((item) => item.photoId),
-    ].filter(Boolean),
-    builtAt: new Date().toISOString(),
-    telemetry,
-  });
+  let copyWarnings: string[] = [];
+  const pack = (copy: SiteCopy, telemetry: Telemetry): GeneratedSite => {
+    const theme = themeSnapshot(options.artDirection);
+    return {
+      copy,
+      photoIds: collectPhotoIds(copy),
+      builtAt: new Date().toISOString(),
+      telemetry,
+      fontMap: theme.fontMap,
+      paletteLog: theme.palette.log,
+      designDecisions: buildDesignDecisions({
+        intake: options.intake,
+        art: options.artDirection,
+        telemetry,
+        fontMap: theme.fontMap,
+        fieldHex: theme.fieldHex,
+      }),
+      copyWarnings,
+      trace: buildWebsiteTrace({
+        telemetry,
+        consentGranted: Boolean(options.cloudFallbackConsent),
+        scrubWarnings: copyWarnings,
+        copyReady: true,
+      }),
+    };
+  };
 
   const finish = (
     badge: InferenceBadge,
@@ -720,6 +746,7 @@ export async function generateWebsiteWork(options: WebsiteGenerateOptions): Prom
         const parsed = extractJson(result.text);
         const accepted = acceptWebsiteCopy(parsed, plan, options.intake);
         if (accepted.ok && accepted.copy) {
+          copyWarnings = accepted.warnings;
           return finish(
             "on-device",
             "This website was composed on-device with Gemini Nano. Client values did not leave this computer. Tokens were not required for the on-device path.",
@@ -786,6 +813,7 @@ export async function generateWebsiteWork(options: WebsiteGenerateOptions): Prom
         },
       );
     }
+    copyWarnings = accepted.warnings;
     return finish(
       "cloud",
       confidentialPresent
